@@ -1,5 +1,7 @@
 // Copyright (c) Olaru Alexandru <olarualexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
+#ifndef SERIAL_W
+#define SERIAL_W
 
 #include<string.h>
 #include<unistd.h>
@@ -17,3 +19,5 @@ void serialInit(const char *);
 void writeToSerial(const char *);
 
 void serialClose(void);
+
+#endif // SERIAL_W
