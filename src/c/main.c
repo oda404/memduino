@@ -5,6 +5,7 @@
 #include<string.h>
 #include<pthread.h>
 #include<math.h>
+#include<unistd.h>
 
 #include"serialW.h"
 
@@ -24,14 +25,10 @@ int parseIntFromStr(const char *str)
 	return integer;
 }
 
-int getUsedMemInMB(const char *totMem, const char *avalMem, char *bufferMem, char *cachedMem)
+int getUsedMemInMB(const int *memTotal, const int *memFree, const int *buffers, const int *cached, const int *sReclaimable, const int *shmem)
 {
-	int totMemInt = parseIntFromStr(totMem);
-	int avalMemInt = parseIntFromStr(avalMem);
-	int bufferMemInt = parseIntFromStr(bufferMem);
-	int cachedMemInt = parseIntFromStr(cachedMem);
-
-	return ((totMemInt - avalMemInt) - (bufferMemInt - cachedMemInt)) / KB;
+	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
+	return ((*memTotal - *memFree) - (*buffers + (*cached + *sReclaimable - *shmem))) / KB;
 }
 
 void intToString(int integer, int integerLen, char *destStr)
@@ -68,25 +65,31 @@ int main(void)
 			printf("Fatal error: meminfo was not found in /proc/\n");
 			break;
 		}
-
-		char totMemField[MAX_INPUT_LEN], avalMemField[MAX_INPUT_LEN], buffersMemField[MAX_INPUT_LEN], cachedMemField[MAX_INPUT_LEN], line[MAX_INPUT_LEN];
+		
+		int memTotal, buffers, cached, memFree, shmem, sReclaimable;
+		char line[MAX_INPUT_LEN];
 
 		while(fgets(line, MAX_INPUT_LEN, file))
 		{
-			if(strstr(line, "MemTotal"))
-				strcpy(totMemField, line);
-			else if(strstr(line, "Buffers"))
-				strcpy(buffersMemField, line);
-			else if(strstr(line, "Cached"))
-				strcpy(cachedMemField, line);
-			else if(strstr(line, "MemAvailable"))
-				strcpy(avalMemField, line);
+			if(strstr(line, "MemTotal:"))
+				memTotal = parseIntFromStr(line);
+			else if(strstr(line, "Buffers:"))
+				buffers = parseIntFromStr(line);
+			else if(strstr(line, "Cached:") && !strstr(line, "SwapCached:"))
+				cached = parseIntFromStr(line);
+			else if(strstr(line, "MemFree:"))
+				memFree = parseIntFromStr(line);
+			else if(strstr(line, "Shmem:"))
+				shmem = parseIntFromStr(line);
+			else if(strstr(line, "SReclaimable:"))
+				sReclaimable = parseIntFromStr(line);
 		}
 
-		int usedMemInt = getUsedMemInMB(totMemField, avalMemField, buffersMemField, cachedMemField);
-		int usedMemIntLen = getIntLen(usedMemInt);
-		char usedMemStr[usedMemIntLen + 1];
-		intToString(usedMemInt, usedMemIntLen, usedMemStr);
+		int usedMem = getUsedMemInMB(&memTotal, &memFree, &buffers, &cached, &sReclaimable, &shmem);
+		int usedMemLen = getIntLen(usedMem);
+		char usedMemStr[usedMemLen + 1];
+		intToString(usedMem, usedMemLen, usedMemStr);
+
 		writeToSerial(usedMemStr);
 
 		fclose(file);
@@ -95,7 +98,6 @@ int main(void)
 	}
 
 	serialClose();
-
 #endif // __linux__
 
 	return 0;
