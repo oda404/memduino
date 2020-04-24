@@ -51,7 +51,9 @@ private:
     digitalWrite(pinE, LOW);
     digitalWrite(pinF, LOW);
     digitalWrite(pinG, LOW);
+    digitalWrite(DP, LOW);
   }
+  
 public:
   void D1ON()
   {
@@ -103,6 +105,11 @@ public:
 class DisplayFunc
 {
 public:
+
+  void displayDP()
+  {
+    digitalWrite(DP, HIGH);
+  }
   
   void display0()
   {
@@ -211,29 +218,58 @@ public:
   
 };
 
-boolean go = false;
-int currentDigit = 0;
-char packet[5]; // 4 digits + final 'X' to confirm the packet
+int currentDigit = 0, packetSize = 6; // initialized to 6 that way it won't try to daisplay anything until a valid packet is received
+boolean continueReading = false;
+char packet[5] = {0}, buffPacket[5] = {0}; // Max 5 digits
+
 DisplayFunc displayFunc;
 DigitFunc digitFunc;
 
-void loop()
-{ 
-  if(Serial.available())
-  {
+void readPacket()
+{
+  if(Serial.available()) // Check to see if there are any incoming bytes
+  { 
     char c = (char)Serial.read();
-    if(c != '\0')
+    
+    if(continueReading)
     {
-      packet[currentDigit++] = c;
+      if(c == 'E') // 'E'nd of packet
+      {
+        for(int i = 0; i < currentDigit; ++i) // Swap buffers
+        {
+          packet[i] = buffPacket[i];
+        }
+        
+        packetSize = currentDigit;
+        continueReading = false;
+        currentDigit = 0;
+      }
+      else
+      {
+        buffPacket[currentDigit++] = c;
+      }
     }
-    else
+    else if(c == 'S') // 'S'tart of packet
     {
-      packet[4] == 'X' ? go = true : go = false;
-      currentDigit = 0;
+      continueReading = true;
     }
   }
-  
-  if(go)
+}
+
+void displayRAM()
+{
+  if(packetSize < 5) // if the used ram value is <= 9999 MB (4 digits)
+  {
+    for(int i = 0; i < packetSize; ++i)
+    {
+      DigitFunc::func digFunc = digitFunc.DigitFunc::funcArr[4 - packetSize + i];
+      (digitFunc.*digFunc)();
+      
+      DisplayFunc::func disFunc = displayFunc.DisplayFunc::funcArr[charToInt(packet[i])];
+      (displayFunc.*disFunc) ();
+    }
+  }
+  else if(packetSize == 5) // if the used ram value is bigger than 9999 MB (5 digits)
   {
     for(int i = 0; i < 4; ++i)
     {
@@ -241,20 +277,22 @@ void loop()
       (digitFunc.*digFunc)();
       
       DisplayFunc::func disFunc = displayFunc.DisplayFunc::funcArr[charToInt(packet[i])];
-      (displayFunc.*disFunc) ();
+      /* if the second digit is to be displayed, also activate the DP
+         the used RAM is now displayed as GB instead of MB  "10.00" GB */
+      if(i == 1)
+      {
+        displayFunc.displayDP();
+      }
+      (displayFunc.*disFunc)();
     }
   }
-  else // only display 0s if no valid packet is received
-  {
-     DisplayFunc::func disFunc = displayFunc.DisplayFunc::funcArr[0];
-    
-     for(int i = 0; i < 4; ++i)
-     {
-       DigitFunc::func digFunc = digitFunc.DigitFunc::funcArr[i];
-       (digitFunc.*digFunc)();
-       
-       (displayFunc.*disFunc)();
-     }
-  }
 }
+
+void loop()
+{ 
+  readPacket();
+  
+  displayRAM();
+}
+
 
