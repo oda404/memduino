@@ -10,7 +10,6 @@
 #include"serialW.h"
 
 #define MAX_INPUT_LEN 64
-#define KB 1024
 
 int asciiZero = (int)'0', asciiNine = (int)'9';
 
@@ -28,21 +27,26 @@ int parseIntFromStr(const char *str)
 int getUsedMemInMB(const int *memTotal, const int *memFree, const int *buffers, const int *cached, const int *sReclaimable, const int *shmem)
 {
 	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	return ((*memTotal - *memFree) - (*buffers + (*cached + *sReclaimable - *shmem))) / KB;
+	return ((*memTotal - *memFree) - (*buffers + (*cached + *sReclaimable - *shmem))) / 1024;
 }
 
-void intToString(int integer, int integerLen, char *destStr)
+void createPacket(int integer, int integerLen, char *destStr)
 {
 	int aux = 1;
+	int i = 0;
+
+	destStr[i++] = 'S';
 	
 	while(aux <= integerLen)
 	{
-		destStr[aux - 1] = (char)(integer / (int)pow(10, integerLen - aux) + asciiZero);
+		destStr[i++] = (char)(integer / (int)pow(10, integerLen - aux) + asciiZero);
 		integer = integer % (int)pow(10, integerLen - aux++);
 	}
 	
-	destStr[aux++ - 1] = 'X';
-	destStr[aux - 1] = '\0';
+	destStr[i++] = 'E';
+	destStr[i++] = '\0';
+
+	/* start and end the packet with S and E respectively */
 }
 
 int getIntLen(int integer)
@@ -87,8 +91,8 @@ int main(void)
 
 		int usedMem = getUsedMemInMB(&memTotal, &memFree, &buffers, &cached, &sReclaimable, &shmem);
 		int usedMemLen = getIntLen(usedMem);
-		char usedMemStr[usedMemLen + 1];
-		intToString(usedMem, usedMemLen, usedMemStr);
+		char usedMemStr[usedMemLen + 2];
+		createPacket(usedMem, usedMemLen, usedMemStr);
 
 		writeToSerial(usedMemStr);
 
