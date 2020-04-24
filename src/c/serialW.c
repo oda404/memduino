@@ -5,7 +5,12 @@
 
 void serialInit(const char *deviceName)
 {
-    usb = open("/dev/ttyUSB0", O_RDWR| O_NOCTTY);
+	/* strlen("/dev/") == 5 */
+	char devicePath[5 + strlen(deviceName) + 1];
+	strcpy(devicePath, "/dev/");
+	strcat(devicePath, deviceName);
+
+    usb = open(devicePath, O_RDWR| O_NOCTTY);
     memset (&tty, 0, sizeof tty);
     cfsetispeed (&tty, (speed_t)B9600);
     
