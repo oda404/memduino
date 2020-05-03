@@ -10,36 +10,34 @@ void serialInit(const char *deviceName)
 	strcpy(devicePath, "/dev/");
 	strcat(devicePath, deviceName);
 
-    usb = open(devicePath, O_RDWR| O_NOCTTY);
-    memset (&tty, 0, sizeof tty);
-    cfsetispeed (&tty, (speed_t)B9600);
-    
-    /* attributes for the port */
-    tty.c_cflag     &=  ~PARENB;
-	tty.c_cflag     &=  ~CSTOPB;
-	tty.c_cflag     &=  ~CSIZE;
-	tty.c_cflag     |=  CS8;
-	tty.c_cflag     &=  ~CRTSCTS;
-	tty.c_cc[VMIN]   =  1;
-	tty.c_cc[VTIME]  =  5;
-	tty.c_cflag     |=  CREAD | CLOCAL;
+	usb = open(devicePath, O_WRONLY| O_NOCTTY | O_SYNC);
+
+	if(usb < 0)
+	{
+		printf("Error in opening %s\n", deviceName);
+	}
+
+	memset(&tty, 0, sizeof tty);
+
+	tcgetattr(usb, &tty);
+
+	cfsetospeed (&tty, (speed_t)B9600);			// baud speed of 9600
+
+	/* attributes for the port */
+	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per byte
+	tty.c_cflag &= ~(PARENB | PARODD); 			// no parity
 
 	cfmakeraw(&tty);
 
-	tcflush(usb, TCIFLUSH);
+	tcsetattr(usb, TCSANOW, &tty);
 }
 
 void writeToSerial(const char *data)
 {
-	int n_written = 0, spot = 0;
-
-	do {
-		n_written = write(usb, &data[spot], 1);
-		spot += n_written;
-	} while (data[spot - 1] != '\0' && n_written > 0);
+	write(usb, data, strlen(data));
 }
 
 void serialClose(void)
 {
-    close(usb);
+	close(usb);
 }

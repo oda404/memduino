@@ -7,6 +7,7 @@
 #include<unistd.h>
 #include<fcntl.h> 
 #include<termios.h>
+#include<stdio.h>
 
 /* definition of CRTSCTS */
 #define CRTSCTS  020000000000 
