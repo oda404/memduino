@@ -32,6 +32,7 @@ void setup()
   pinMode(D4, OUTPUT);
   
   Serial.begin(9600);
+  Serial.setTimeout(10);
 }
 
 int charToInt(char c)
