@@ -33,16 +33,17 @@ void createPacket(int integer, int integerLen, char *destStr)
 {
 	int aux = 1;
 	int i = 0;
-
-	destStr[i++] = 'S';
 	
+	destStr[i++] = 'S';
+
 	while(aux <= integerLen)
 	{
 		destStr[i++] = (char)(integer / (int)pow(10, integerLen - aux) + asciiZero);
 		integer = integer % (int)pow(10, integerLen - aux++);
 	}
-	
+
 	destStr[i++] = 'E';
+	
 	destStr[i++] = '\0';
 
 	/* start and end the packet with S and E respectively */
@@ -61,6 +62,17 @@ int main(void)
 
 	serialInit("ttyUSB0");
 
+	int memTotal, 
+	buffers, 
+	cached, 
+	memFree, 
+	shmem, 
+	sReclaimable,
+	usedMem,
+	usedMemLen;
+
+	char line[MAX_INPUT_LEN];
+
 	while(1)
 	{
 		if(!(file = fopen("/proc/meminfo", "r")))
@@ -68,9 +80,6 @@ int main(void)
 			printf("Fatal error: meminfo was not found in /proc/\n");
 			break;
 		}
-		
-		int memTotal, buffers, cached, memFree, shmem, sReclaimable;
-		char line[MAX_INPUT_LEN];
 
 		while(fgets(line, MAX_INPUT_LEN, file))
 		{
@@ -88,9 +97,9 @@ int main(void)
 				sReclaimable = parseIntFromStr(line);
 		}
 
-		int usedMem = getUsedMemInMB(&memTotal, &memFree, &buffers, &cached, &sReclaimable, &shmem);
-		int usedMemLen = getIntLen(usedMem);
-		char usedMemStr[usedMemLen + 2];
+		usedMem = getUsedMemInMB(&memTotal, &memFree, &buffers, &cached, &sReclaimable, &shmem);
+		usedMemLen = getIntLen(usedMem);
+		char usedMemStr[usedMemLen + 3];
 		createPacket(usedMem, usedMemLen, usedMemStr);
 
 		writeToSerial(usedMemStr);
@@ -105,3 +114,4 @@ int main(void)
 
 	return 0;
 }
+
