@@ -10,7 +10,7 @@
 #ifdef __linux__
 
 #include<unistd.h>
-#include<terminos.h>
+#include<termios.h>
 
 #elif _WIN32
 
