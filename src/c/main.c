@@ -3,7 +3,6 @@
 
 #include<stdio.h>
 #include<string.h>
-#include<pthread.h>
 #include<math.h>
 
 #include"serialW.h"
@@ -56,7 +55,6 @@ int getIntLen(int integer)
 
 int main(void)
 {
-
 #ifdef __linux__
 	FILE *file;
 
@@ -110,8 +108,45 @@ int main(void)
 	}
 
 	serialClose();
-#endif // __linux__
+
+#elif _WIN32
+
+#define DIV 1048576
+
+	serialInit("COM3");
+
+	/* Hide console on startup by default */
+	HWND hWnd = GetConsoleWindow();
+	ShowWindow(hWnd, SW_HIDE);
+
+
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof(statex);
+
+	int usedMem,
+		usedMemLen;
+
+	while (1)
+	{
+		GlobalMemoryStatusEx(&statex);
+
+		/* Calculate the used memory in MB from the used memory percentage */
+		usedMem = (float)statex.dwMemoryLoad / 100.0f * (float)(statex.ullTotalPhys / DIV);
+
+		usedMemLen = getIntLen(usedMem);
+		char *usedMemStr = malloc(usedMemLen + 3);
+		createPacket(usedMem, usedMemLen, usedMemStr);
+
+		writeToSerial(usedMemStr);
+		
+		free(usedMemStr);
+
+		Sleep(1000);
+	}
+
+	serialClose();
+
+#endif
 
 	return 0;
 }
-

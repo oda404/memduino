@@ -4,16 +4,33 @@
 #define SERIAL_W
 
 #include<string.h>
-#include<unistd.h>
 #include<fcntl.h> 
-#include<termios.h>
 #include<stdio.h>
 
-/* definition of CRTSCTS */
-#define CRTSCTS  020000000000 
+#ifdef __linux__
 
-int usb;
+#include<unistd.h>
+#include<terminos.h>
+
+#elif _WIN32
+
+#include<windows.h>
+
+#endif
+
+
+#ifdef __linux__
+
+int    usb;
 struct termios tty;
+
+#elif _WIN32
+
+HANDLE       hComm;    // serial port handle
+DCB          dcb;      // port attributes
+COMMTIMEOUTS timeouts; // port timeouts
+
+#endif
 
 void serialInit(const char *);
 
