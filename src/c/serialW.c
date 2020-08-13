@@ -3,7 +3,7 @@
 
 #include"serialW.h"
 
-void serialInit(const char *deviceName)
+int serialInit(const char *deviceName)
 {
 #ifdef __linux__
 
@@ -12,25 +12,38 @@ void serialInit(const char *deviceName)
 	strcpy(devicePath, "/dev/");
 	strcat(devicePath, deviceName);
 
-	usb = open(devicePath, O_WRONLY| O_NOCTTY | O_SYNC);
+	fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
 
-	if(usb < 0)
+	if(fd < 0)
 	{
 		printf("Error in opening %s\n", deviceName);
+		return -1;
 	}
 
-	memset(&tty, 0, sizeof tty);
+	struct termios tty;
 
-	tcgetattr(usb, &tty);
+	if(tcgetattr(fd, &tty) != 0)
+	{
+		printf("Error from tcgetattr\n");
+		return -1;
+	}
 
-	/* Default config for arduinos */
 	cfsetospeed (&tty, (speed_t)B9600);			// baud speed of 9600
-	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per byte
+
+	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
+	
+	tty.c_oflag = 0;
+
 	tty.c_cflag &= ~(PARENB | PARODD); 			// no parity
+	tty.c_cflag |= 0;
+	tty.c_cflag &= ~CSTOPB;
+	tty.c_cflag &= ~CRTSCTS;
 
-	cfmakeraw(&tty);
-
-	tcsetattr(usb, TCSANOW, &tty);
+	if(tcsetattr(fd, TCSANOW, &tty) != 0)
+	{
+		printf("Error from tcsetattr\n");
+		return -1;
+	}
 
 #elif _WIN32
 
@@ -66,13 +79,15 @@ void serialInit(const char *deviceName)
 		printf("Error in setting port timeouts\n");
 
 #endif
+
+	return 0;
 }
 
 void writeToSerial(const char *data)
 {
 #ifdef __linux__
 
-	write(usb, data, strlen(data));
+	write(fd, data, strlen(data));
 
 #elif _WIN32
 
@@ -85,7 +100,7 @@ void serialClose(void)
 {
 #ifdef __linux__
 
-	close(usb);
+	close(fd);
 
 #elif _WIN32
 

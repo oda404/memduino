@@ -1,10 +1,26 @@
 #include"memDuino.h"
 
-static int strToInt(const char *str)
+#ifdef __linux__
+
+#define BUFF_LENGTH 64
+    int memTotal;
+    int buffers;
+    int cached;
+    int memFree;
+    int shmem;
+    int sReclaimable;
+
+#elif _WIN32
+
+
+
+#endif // __linux__
+
+static int parseIntFromStr(const char *str)
 {
 	int integer = 0;
 
-	for(int i = 0; i < strlen(str); ++i)
+	for(size_t i = 0; i < strlen(str); ++i)
 	{
 		if((int)str[i] >= 48 && (int)str[i] <= 57)
 		{
@@ -32,36 +48,38 @@ static int strStartsWith(const char *targetStr, const char *subStr)
 
 static void createPacket(MemDuino *memDuino)
 {
-	int aux = 1;
-	int i = 0;
+	size_t i = 0;
 	
 	memDuino->usedMemStr[i++] = 'S';
 
-	while(aux <= memDuino->usedMemLength)
+	while(i <= memDuino->usedMemLength)
 	{
-		memDuino->usedMemStr[i++] = (char)(memDuino->usedMem / (int)pow(10, memDuino->usedMemLength - aux) + 48);
-		memDuino->usedMem = memDuino->usedMem % (int)pow(10, memDuino->usedMemLength - aux++);
+		memDuino->usedMemStr[i] = (char)(memDuino->usedMem / (int)pow(10, memDuino->usedMemLength - i) + 48);
+		memDuino->usedMem = memDuino->usedMem % (int)pow(10, memDuino->usedMemLength - i++);
 	}
 
 	memDuino->usedMemStr[i++] = 'E';
-	
 	memDuino->usedMemStr[i++] = '\0';
-
 	/* start and end the packet with S and E respectively */
 }
 
-int getUsedMemInMB(MemDuino *memDuino)
+static int getUsedMemInMB()
 {
 	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	return ((memDuino->memTotal - memDuino->memFree) - (memDuino->buffers + (memDuino->cached + memDuino->sReclaimable - memDuino->shmem))) / 1024;
+	return ((memTotal - memFree) - (buffers + (cached + sReclaimable - shmem))) / 1024;
 }
 
 void startMemDuino(MemDuino *memDuino)
 {
+#ifdef __linux__
+
     FILE *file;
     char line[BUFF_LENGTH];
 
-    serialInit("ttyUSB0");
+    if(serialInit("ttyUSB0") < 0)
+	{
+		return;
+	}
 
     while(1)
     {
@@ -75,33 +93,33 @@ void startMemDuino(MemDuino *memDuino)
 		{
 			if(strStartsWith(line, "MemTotal"))
 			{
-				memDuino->memTotal = strToInt(line);
+				memTotal = parseIntFromStr(line);
 			}
 			else if(strStartsWith(line, "Buffers"))
 			{
-				memDuino->buffers = strToInt(line);
+				buffers = parseIntFromStr(line);
 			}
 			else if(strStartsWith(line, "Cached"))
 			{
-				memDuino->cached = strToInt(line);
+				cached = parseIntFromStr(line);
 			}
 			else if(strStartsWith(line, "MemFree"))
 			{
-				memDuino->memFree = strToInt(line);
+				memFree = parseIntFromStr(line);
 			}
 			else if(strStartsWith(line, "Shmem"))
 			{
-				memDuino->shmem = strToInt(line);
+				shmem = parseIntFromStr(line);
 			}
 			else if(strStartsWith(line, "SReclaimable"))
 			{
-				memDuino->sReclaimable = strToInt(line);
+				sReclaimable = parseIntFromStr(line);
 			}
         }
 
         fclose(file);
 
-        memDuino->usedMem = getUsedMemInMB(memDuino);
+        memDuino->usedMem = getUsedMemInMB();
 		memDuino->usedMemLength = (int)log10(memDuino->usedMem) + 1;
         memDuino->usedMemStr = malloc(memDuino->usedMemLength + 3);
         
@@ -114,4 +132,10 @@ void startMemDuino(MemDuino *memDuino)
     }
 
     serialClose();
+
+#elif _WIN32
+
+
+
+#endif // __linux__
 }

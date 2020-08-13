@@ -11,24 +11,12 @@
 
 typedef struct
 {
-#ifdef __linux__
-#define BUFF_LENGTH 64
-    int memTotal;
-    int buffers;
-    int cached;
-    int memFree;
-    int shmem;
-    int sReclaimable;
-#endif // __linux__
-
     int usedMem;
+    // digit count in usedMem
     size_t usedMemLength;
     char *usedMemStr;
-
     int updateIntervalMs;
 } MemDuino;
-
-int getUsedMemInMB(MemDuino *memDuino);
 
 // this will freeze the current thread
 void startMemDuino(MemDuino *memDuino);

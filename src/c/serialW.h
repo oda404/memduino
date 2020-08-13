@@ -12,19 +12,11 @@
 #include<unistd.h>
 #include<termios.h>
 
+int fd;
+
 #elif _WIN32
 
 #include<windows.h>
-
-#endif
-
-
-#ifdef __linux__
-
-int    usb;
-struct termios tty;
-
-#elif _WIN32
 
 HANDLE       hComm;    // serial port handle
 DCB          dcb;      // port attributes
@@ -32,7 +24,7 @@ COMMTIMEOUTS timeouts; // port timeouts
 
 #endif
 
-void serialInit(const char *);
+int serialInit(const char *);
 
 void writeToSerial(const char *);
 
