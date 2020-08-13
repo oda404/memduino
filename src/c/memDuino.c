@@ -76,7 +76,7 @@ void startMemDuino(MemDuino *memDuino)
     FILE *file;
     char line[BUFF_LENGTH];
 
-    if(serialInit("ttyUSB0") < 0)
+    if(serialInit(memDuino->deviceName) < 0)
 	{
 		return;
 	}

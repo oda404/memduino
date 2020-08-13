@@ -16,6 +16,7 @@ typedef struct
     size_t usedMemLength;
     char *usedMemStr;
     int updateIntervalMs;
+    char *deviceName;
 } MemDuino;
 
 // this will freeze the current thread

@@ -7,6 +7,7 @@ int main(void)
 {
 	MemDuino memDuino;
 	memDuino.updateIntervalMs = 1000;
+	memDuino.deviceName = "ttyUSB0";
 
 	startMemDuino(&memDuino);
 /*
