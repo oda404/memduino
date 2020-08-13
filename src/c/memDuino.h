@@ -1,3 +1,6 @@
+// Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
+// Licensed under the MIT license found in the LICENSE file in the root of this repository.
+
 #ifndef MEM_H
 #define MEM_H
 

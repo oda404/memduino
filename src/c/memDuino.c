@@ -1,3 +1,6 @@
+// Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
+// Licensed under the MIT license found in the LICENSE file in the root of this repository.
+
 #include"memDuino.h"
 
 #ifdef __linux__
