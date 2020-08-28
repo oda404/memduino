@@ -5,11 +5,12 @@
 
 int main(void)
 {
-	MemDuino memDuino;
-	memDuino.updateIntervalMs = 1000;
-	memDuino.deviceName = "ttyUSB0";
+	memduino memduino;
+	memduino.info.update_interval_ms = 1000;
+	memduino.info.device_name = "ttyUSB0";
+	memduino.info.init_timeout_ms = 10000;
 
-	startMemDuino(&memDuino);
+	start_memduino(&memduino);
 /*
 #define DIV 1048576
 

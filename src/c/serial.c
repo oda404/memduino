@@ -1,34 +1,62 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#include"serialW.h"
+#include"serial.h"
 
-int serialInit(const char *deviceName)
+#include<string.h>
+#include<stdio.h>
+#include<stdlib.h>
+
+#ifdef __linux__
+
+#include<unistd.h>
+#include<termios.h>
+#include<fcntl.h> 
+#include<errno.h>
+
+#elif _WIN32
+
+#include<windows.h>
+
+HANDLE       hComm;    // serial port handle
+DCB          dcb;      // port attributes
+COMMTIMEOUTS timeouts; // port timeouts
+
+#endif // __linux__
+
+int serial_init(memduino *md)
 {
 #ifdef __linux__
 
 	/* strlen("/dev/") == 5 */
-	char devicePath[5 + strlen(deviceName) + 1];
+	char *devicePath;
+	devicePath = malloc(5 + strlen(md->info.device_name) + 1);
 	strcpy(devicePath, "/dev/");
-	strcat(devicePath, deviceName);
+	strcat(devicePath, md->info.device_name);
 
-	fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
+	md->info.device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
 
-	if(fd < 0)
+	free(devicePath);
+
+	if(md->info.device_fd < 0)
 	{
-		printf("Error in opening %s\n", deviceName);
+		printf("Error when oppening /dev/%s: %s\n", md->info.device_name, strerror(errno));
 		return -1;
 	}
 
 	struct termios tty;
 
-	if(tcgetattr(fd, &tty) != 0)
+	if(tcgetattr(md->info.device_fd, &tty) != 0)
 	{
-		printf("Error from tcgetattr\n");
+		printf("Error from tcgetattr: %s\n", strerror(errno));
 		return -1;
 	}
 
-	cfsetospeed (&tty, (speed_t)B9600);			// baud speed of 9600
+	if(cfsetospeed(&tty, (speed_t)B9600) != 0)
+	{
+		printf("Error from cfsetospeed: %s\n", strerror(errno));
+		return -1;
+	}
 
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
 	
@@ -39,9 +67,9 @@ int serialInit(const char *deviceName)
 	tty.c_cflag &= ~CSTOPB;
 	tty.c_cflag &= ~CRTSCTS;
 
-	if(tcsetattr(fd, TCSANOW, &tty) != 0)
+	if(tcsetattr(md->info.device_fd, TCSANOW, &tty) != 0)
 	{
-		printf("Error from tcsetattr\n");
+		printf("Error from tcsetattr: %s\n", strerror(errno));
 		return -1;
 	}
 
@@ -83,11 +111,15 @@ int serialInit(const char *deviceName)
 	return 0;
 }
 
-void writeToSerial(const char *data)
+void write_to_serial(int fd, const char *data)
 {
 #ifdef __linux__
-
-	write(fd, data, strlen(data));
+	size_t n = strlen(data);
+	size_t written = write(fd, data, n);
+	if(written < n)
+	{
+		printf("Written %ld out of %ld\n", written, n);
+	}
 
 #elif _WIN32
 
@@ -96,11 +128,15 @@ void writeToSerial(const char *data)
 #endif
 }
 
-void serialClose(void)
+void serial_close(int fd)
 {
 #ifdef __linux__
 
-	close(fd);
+	int status = close(fd);
+	if(status == -1)
+	{
+		printf("Error when closing %d: %s", fd, strerror(errno));
+	}
 
 #elif _WIN32
 
