@@ -8,8 +8,8 @@ add_executable(${PROJECT_NAME}
     src/c/main.c
     src/c/memDuino.c
     src/c/memDuino.h
-    src/c/serialW.c
-    src/c/serialW.h
+    src/c/serial.c
+    src/c/serial.h
 )
 
 if(UNIX)
