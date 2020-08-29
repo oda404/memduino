@@ -18,10 +18,6 @@
 
 #include<windows.h>
 
-HANDLE       hComm;    // serial port handle
-DCB          dcb;      // port attributes
-COMMTIMEOUTS timeouts; // port timeouts
-
 #endif // __linux__
 
 int serial_init(memduino *md)
@@ -77,15 +73,20 @@ int serial_init(memduino *md)
 
 	BOOL Status;
 
-	hComm = CreateFileA(deviceName, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (hComm == INVALID_HANDLE_VALUE)
-		printf("Error in opening serial port %s\n", deviceName);
+	md->info.commHandle = CreateFileA(md->info.device_name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (md->info.commHandle == INVALID_HANDLE_VALUE)
+	{
+		printf("Error in opening serial port %s\n", md->info.device_name);
+	}
 
+	DCB dcb;
 	dcb.DCBlength = sizeof(dcb);
 
-	Status = GetCommState(hComm, &dcb);
+	Status = GetCommState(md->info.commHandle, &dcb);
 	if (!Status)
+	{
 		printf("Error in GetCommState\n");
+	}
 
 	/* Defaut config for arduinos */
 	dcb.BaudRate = CBR_9600;	// 9600 Baud speed
@@ -93,29 +94,34 @@ int serial_init(memduino *md)
 	dcb.StopBits = ONESTOPBIT;	// 1 stop bit
 	dcb.Parity   = PARITY_NONE;	// no parity
 
-	Status = SetCommState(hComm, &dcb);
+	Status = SetCommState(md->info.commHandle, &dcb);
 
 	if (!Status)
+	{
 		printf("Error in setting DCB Struct\n");
+	}
 
+	COMMTIMEOUTS timeouts; // port timeouts
 	timeouts.WriteTotalTimeoutConstant = 50;
 	timeouts.WriteTotalTimeoutMultiplier = 10;
 
-	Status = SetCommTimeouts(hComm, &timeouts);
+	Status = SetCommTimeouts(md->info.commHandle, &timeouts);
 
 	if (!Status)
-		printf("Error in setting port timeouts\n");
+	{
+		printf("Error in setting port timeouts\n"); 
+	}
 
 #endif
 
 	return 0;
 }
 
-void write_to_serial(int fd, const char *data)
+void write_to_serial(memduino *md, const char *data)
 {
 #ifdef __linux__
 	size_t n = strlen(data);
-	size_t written = write(fd, data, n);
+	size_t written = write(md->info.device_fd, data, n);
 	if(written < n)
 	{
 		printf("Written %ld out of %ld\n", written, n);
@@ -123,16 +129,16 @@ void write_to_serial(int fd, const char *data)
 
 #elif _WIN32
 
-	WriteFile(hComm, data, strlen(data), NULL, NULL);
+	WriteFile(md->info.commHandle, data, strlen(data), NULL, NULL);
 
 #endif
 }
 
-void serial_close(int fd)
+void serial_close(memduino *md)
 {
 #ifdef __linux__
 
-	int status = close(fd);
+	int status = close(md->info.device_fd);
 	if(status == -1)
 	{
 		printf("Error when closing %d: %s", fd, strerror(errno));
@@ -140,7 +146,7 @@ void serial_close(int fd)
 
 #elif _WIN32
 
-	CloseHandle(hComm);
+	CloseHandle(md->info.commHandle);
 
 #endif
 }

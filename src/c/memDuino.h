@@ -4,6 +4,10 @@
 #ifndef MEM_DUINO_H
 #define MEM_DUINO_H
 
+#ifdef _WIN32
+#include<Windows.h>
+#endif
+
 typedef struct
 {
     unsigned int mem_total;
@@ -24,8 +28,12 @@ typedef struct
     unsigned int init_timeout_ms;
     /* Name of the device to open */
     char *device_name;
+#ifdef __linux__
     /* fd of the opened device */
     int device_fd;
+#elif _WIN32
+    HANDLE commHandle;
+#endif // __linux_-
 } memduino_info;
 
 

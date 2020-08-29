@@ -5,21 +5,16 @@
 
 #include"serial.h"
 
+#include<math.h>
+
 #ifdef __linux__
 
 #include<time.h>
-#include<math.h>
 #include<string.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
 #define BUFF_LENGTH 64
-
-#elif _WIN32
-
-
-
-#endif // __linux__
 
 static unsigned int parse_uint_from_str(const char *str)
 {
@@ -52,6 +47,14 @@ static int str_starts_with(const char *targetStr, const char *subStr)
 	return 1;
 }
 
+static void set_used_mem_mb(memduino* md)
+{
+	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
+	md->mem_info.used_mem = ((md->mem_info.mem_total - md->mem_info.mem_free) - (md->mem_info.buffers + (md->mem_info.cached + md->mem_info.s_reclaimable - md->mem_info.sh_mem))) / 1024;
+}
+
+#endif // __linux__
+
 static void create_packet(char *packet, unsigned int used_mem, size_t used_mem_dig_cnt)
 {
 	size_t i = 0;
@@ -68,14 +71,9 @@ static void create_packet(char *packet, unsigned int used_mem, size_t used_mem_d
 	/* start and end the packet with S and E respectively */
 }
 
-static void set_used_mem_mb(memduino *md)
-{
-	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	md->mem_info.used_mem = ((md->mem_info.mem_total - md->mem_info.mem_free) - (md->mem_info.buffers + (md->mem_info.cached + md->mem_info.s_reclaimable - md->mem_info.sh_mem))) / 1024;
-}
-
 static void sleep_for_ms(time_t time)
 {
+#ifdef __linux__
 #if _POSIX_C_SOURCE > 199309L
 	struct timespec ts;
 	ts.tv_sec = time / 1000;
@@ -83,14 +81,17 @@ static void sleep_for_ms(time_t time)
 	nanosleep(&ts, NULL);
 #else
 	usleep(time * 1000);
-#endif
+#endif // _POSIX_C_SOURCE
+#elif _WIN32
+	Sleep(time);
+#endif // _WIN32
+
 }
 
 #define SLEEP_INIT_TRY_MS 1500
 
 void start_memduino(memduino *memduino)
 {
-#ifdef __linux__
 
 	unsigned int init_time = 0;
 
@@ -106,10 +107,12 @@ void start_memduino(memduino *memduino)
 		init_time += SLEEP_INIT_TRY_MS;
 	}
 
+#ifdef __linux__
+
 	FILE *file;
 	char line[BUFF_LENGTH];
 
-    	while(1)
+	while(1)
 	{
 		if(!(file = fopen("/proc/meminfo", "r")))
 		{
@@ -154,17 +157,39 @@ void start_memduino(memduino *memduino)
 
 		create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
 
-		write_to_serial(memduino->info.device_fd, packet);
+		write_to_serial(memduino, packet);
 
 		free(packet);
 		sleep_for_ms(memduino->info.update_interval_ms);
 	}
 
-	serial_close(memduino->info.device_fd);
+	serial_close(memduino);
 
 #elif _WIN32
 
+	/* Hide the console window */
+	HWND hWnd = GetConsoleWindow();
+	ShowWindow(hWnd, SW_HIDE);
 
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof(statex);
+
+	while (1)
+	{
+		GlobalMemoryStatusEx(&statex);
+
+		memduino->mem_info.used_mem = (statex.ullTotalPhys - statex.ullAvailPhys) / (1024 * 1024);
+
+		size_t used_mem_dig_cnt = (int)log10(memduino->mem_info.used_mem) + 1;
+		char* packet = malloc(used_mem_dig_cnt + 2);
+
+		create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
+
+		write_to_serial(memduino, packet);
+
+		free(packet);
+		sleep_for_ms(memduino->info.update_interval_ms);
+	}
 
 #endif // __linux__
 }

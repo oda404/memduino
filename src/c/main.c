@@ -6,22 +6,17 @@
 int main(void)
 {
 	memduino memduino;
-	memduino.info.update_interval_ms = 1000;
+#if defined(_WIN32)
+	memduino.info.device_name = "COM3";
+#elif defined(__linux__)
 	memduino.info.device_name = "ttyUSB0";
+#endif // _WIN32
+	memduino.info.update_interval_ms = 1000;
 	memduino.info.init_timeout_ms = 10000;
 
 	start_memduino(&memduino);
 /*
 #define DIV 1048576
-
-	serialInit("COM3");
-
-	HWND hWnd = GetConsoleWindow();
-	ShowWindow(hWnd, SW_HIDE);
-
-
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof(statex);
 
 	int usedMem,
 		usedMemLen;

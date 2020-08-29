@@ -7,7 +7,7 @@
 #include"memDuino.h"
 
 int serial_init(memduino *md);
-void write_to_serial(int fd, const char *data);
-void serial_close(int fd);
+void write_to_serial(memduino *md, const char *data);
+void serial_close(memduino *md);
 
 #endif // SERIAL_W_H
