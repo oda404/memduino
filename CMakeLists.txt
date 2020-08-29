@@ -16,9 +16,9 @@ set(link_libs "")
 
 if(UNIX)
     install(CODE "file(COPY memDuino DESTINATION /usr/bin)")
-    set(link_libs $link_libs + "m")
+    set(link_libs ${link_libs} "m")
 endif(UNIX)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    $link_libs
+    ${link_libs}
 )
