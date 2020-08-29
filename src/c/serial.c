@@ -141,7 +141,7 @@ void serial_close(memduino *md)
 	int status = close(md->info.device_fd);
 	if(status == -1)
 	{
-		printf("Error when closing %d: %s", fd, strerror(errno));
+		printf("Error when closing %d: %s", md->info.device_fd, strerror(errno));
 	}
 
 #elif _WIN32
