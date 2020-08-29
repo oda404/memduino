@@ -107,17 +107,17 @@ void start_memduino(memduino *memduino)
 	}
 
 	FILE *file;
-    char line[BUFF_LENGTH];
+	char line[BUFF_LENGTH];
 
-    while(1)
-    {
-        if(!(file = fopen("/proc/meminfo", "r")))
+    	while(1)
+	{
+		if(!(file = fopen("/proc/meminfo", "r")))
 		{
 			printf("Fatal error: meminfo was not found in /proc/\n");
 			break;
 		}
 
-        while(fgets(line, BUFF_LENGTH, file))
+		while(fgets(line, BUFF_LENGTH, file))
 		{
 			if(str_starts_with(line, "MemTotal"))
 			{
@@ -143,24 +143,24 @@ void start_memduino(memduino *memduino)
 			{
 				memduino->mem_info.s_reclaimable = parse_uint_from_str(line);
 			}
-        }
+		}
 
-        fclose(file);
+		fclose(file);
 
 		set_used_mem_mb(memduino);
-		
+
 		size_t used_mem_dig_cnt = (int)log10(memduino->mem_info.used_mem) + 1;
 		char *packet = malloc(used_mem_dig_cnt + 2);
-        
-        create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
-        
-        write_to_serial(memduino->info.device_fd, packet);
 
-        free(packet);
+		create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
+
+		write_to_serial(memduino->info.device_fd, packet);
+
+		free(packet);
 		sleep_for_ms(memduino->info.update_interval_ms);
-    }
+	}
 
-    serial_close(memduino->info.device_fd);
+	serial_close(memduino->info.device_fd);
 
 #elif _WIN32
 
