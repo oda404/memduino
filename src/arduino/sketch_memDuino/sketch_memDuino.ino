@@ -1,13 +1,13 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#define PIN_A  3
-#define PIN_B  7
-#define PIN_C  11
-#define PIN_D  9
-#define PIN_E  8
-#define PIN_F  4
-#define PIN_G  12
+#define PIN_A 3
+#define PIN_B 7
+#define PIN_C 11
+#define PIN_D 9
+#define PIN_E 8
+#define PIN_F 4
+#define PIN_G 12
 #define DP    10
 
 #define D1    2
@@ -236,7 +236,7 @@ static void try_read_packet()
     if (packet_continue_reading)
     {
       /* Check if current digit exceeds the buff size */
-      if (packet_current_digit == PACKET_SIZE)
+      if (packet_current_digit == PACKET_SIZE + 1)
       {
         packet_continue_reading = false;
         packet_current_digit = 0;
@@ -309,6 +309,7 @@ static bool is_idling()
 {
   const uint32_t ellapsed_millis = millis();
   static uint32_t last_millis = 0;
+  static bool is_in_idle = false;
 
   /* wrapped */
   if (last_millis > ellapsed_millis)
@@ -324,7 +325,16 @@ static bool is_idling()
 
   if (ms_since_last_packet_received >= IDLE_TIMEOUT_MS)
   {
+    if(!is_in_idle)
+    {
+      is_in_idle = true;
+    }
     return true;
+  }
+
+  if(is_in_idle)
+  {
+    is_in_idle = false;
   }
 
   return false;
@@ -332,7 +342,23 @@ static bool is_idling()
 
 static void display_idle_animation()
 {
+  static uint8_t idle_animation_digit = 0;
+  static uint32_t last_millis = 0;
+  const uint32_t ellapsed_millis = millis();
 
+  if(idle_animation_digit == 15)
+  {
+    idle_animation_digit = 0;
+  }
+
+  last_millis += ellapsed_millis - last_millis;
+
+  if(last_millis >= 500)
+  {
+    ++idle_animation_digit;
+  }
+
+  
 }
 
 void loop()
