@@ -7,42 +7,42 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#ifdef __linux__
+#if defined(__linux__)
 
 #include<unistd.h>
 #include<termios.h>
 #include<fcntl.h> 
 #include<errno.h>
 
-#elif _WIN32
+#elif defined(_WIN32)
 
 #include<windows.h>
 
 #endif // __linux__
 
-int serial_init(memduino *md)
+int serial_init(MemDuino *memduino)
 {
-#ifdef __linux__
+#if defined(__linux__)
 
 	/* strlen("/dev/") == 5 */
 	char *devicePath;
-	devicePath = malloc(5 + strlen(md->info.device_name) + 1);
+	devicePath = malloc(5 + strlen(memduino->info.device_name) + 1);
 	strcpy(devicePath, "/dev/");
-	strcat(devicePath, md->info.device_name);
+	strcat(devicePath, memduino->info.device_name);
 
-	md->info.device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
+	memduino->info.device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
 
 	free(devicePath);
 
-	if(md->info.device_fd < 0)
+	if(memduino->info.device_fd < 0)
 	{
-		printf("Error when oppening /dev/%s: %s\n", md->info.device_name, strerror(errno));
+		printf("Error when oppening /dev/%s: %s\n", memduino->info.device_name, strerror(errno));
 		return -1;
 	}
 
 	struct termios tty;
 
-	if(tcgetattr(md->info.device_fd, &tty) != 0)
+	if(tcgetattr(memduino->info.device_fd, &tty) != 0)
 	{
 		printf("Error from tcgetattr: %s\n", strerror(errno));
 		return -1;
@@ -63,26 +63,26 @@ int serial_init(memduino *md)
 	tty.c_cflag &= ~CSTOPB;
 	tty.c_cflag &= ~CRTSCTS;
 
-	if(tcsetattr(md->info.device_fd, TCSANOW, &tty) != 0)
+	if(tcsetattr(memduino->info.device_fd, TCSANOW, &tty) != 0)
 	{
 		printf("Error from tcsetattr: %s\n", strerror(errno));
 		return -1;
 	}
 
-#elif _WIN32
+#elif defined(_WIN32)
 
 	BOOL Status;
 
-	md->info.commHandle = CreateFileA(md->info.device_name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (md->info.commHandle == INVALID_HANDLE_VALUE)
+	memduino->info.commHandle = CreateFileA(memduino->info.device_name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	if (memduino->info.commHandle == INVALID_HANDLE_VALUE)
 	{
-		printf("Error in opening serial port %s\n", md->info.device_name);
+		printf("Error in opening serial port %s\n", memduino->info.device_name);
 	}
 
 	DCB dcb;
 	dcb.DCBlength = sizeof(dcb);
 
-	Status = GetCommState(md->info.commHandle, &dcb);
+	Status = GetCommState(memduino->info.commHandle, &dcb);
 	if (!Status)
 	{
 		printf("Error in GetCommState\n");
@@ -94,7 +94,7 @@ int serial_init(memduino *md)
 	dcb.StopBits = ONESTOPBIT;	// 1 stop bit
 	dcb.Parity   = PARITY_NONE;	// no parity
 
-	Status = SetCommState(md->info.commHandle, &dcb);
+	Status = SetCommState(memduino->info.commHandle, &dcb);
 
 	if (!Status)
 	{
@@ -105,48 +105,48 @@ int serial_init(memduino *md)
 	timeouts.WriteTotalTimeoutConstant = 50;
 	timeouts.WriteTotalTimeoutMultiplier = 10;
 
-	Status = SetCommTimeouts(md->info.commHandle, &timeouts);
+	Status = SetCommTimeouts(memduino->info.commHandle, &timeouts);
 
 	if (!Status)
 	{
 		printf("Error in setting port timeouts\n"); 
 	}
 
-#endif
+#endif //__linux__
 
 	return 0;
 }
 
-void write_to_serial(memduino *md, const char *data)
+void write_to_serial(const MemDuino *memduino, const char *data)
 {
-#ifdef __linux__
+#if defined(__linux__)
 	size_t n = strlen(data);
-	size_t written = write(md->info.device_fd, data, n);
+	size_t written = write(memduino->info.device_fd, data, n);
 	if(written < n)
 	{
 		printf("Written %ld out of %ld\n", written, n);
 	}
 
-#elif _WIN32
+#elif defined(_WIN32)
 
-	WriteFile(md->info.commHandle, data, strlen(data), NULL, NULL);
+	WriteFile(memduino->info.commHandle, data, strlen(data), NULL, NULL);
 
-#endif
+#endif //__linux__
 }
 
-void serial_close(memduino *md)
+void serial_close(const MemDuino *memduino)
 {
-#ifdef __linux__
+#if defined(__linux__)
 
-	int status = close(md->info.device_fd);
+	int status = close(memduino->info.device_fd);
 	if(status == -1)
 	{
-		printf("Error when closing %d: %s", md->info.device_fd, strerror(errno));
+		printf("Error when closing %d: %s", memduino->info.device_fd, strerror(errno));
 	}
 
-#elif _WIN32
+#elif defined(_WIN32)
 
-	CloseHandle(md->info.commHandle);
+	CloseHandle(memduino->info.commHandle);
 
-#endif
+#endif //__linux__
 }

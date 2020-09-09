@@ -5,7 +5,7 @@
 
 int main(void)
 {
-	memduino memduino;
+	MemDuino memduino;
 #if defined(_WIN32)
 	memduino.info.device_name = "COM3";
 #elif defined(__linux__)
@@ -15,32 +15,6 @@ int main(void)
 	memduino.info.init_timeout_ms = 10000;
 
 	start_memduino(&memduino);
-/*
-#define DIV 1048576
-
-	int usedMem,
-		usedMemLen;
-
-	while (1)
-	{
-		GlobalMemoryStatusEx(&statex);
-
-		usedMem = (float)statex.dwMemoryLoad / 100.0f * (float)(statex.ullTotalPhys / DIV);
-
-		usedMemLen = getIntLen(usedMem);
-		char *usedMemStr = malloc(usedMemLen + 3);
-		createPacket(usedMem, usedMemLen, usedMemStr);
-
-		writeToSerial(usedMemStr);
-		
-		free(usedMemStr);
-
-		Sleep(1000);
-	}
-
-	serialClose();
-
-#endif
-
-	return 0;*/
+	
+	return 0;
 }

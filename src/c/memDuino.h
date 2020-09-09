@@ -1,12 +1,14 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#ifndef MEM_DUINO_H
-#define MEM_DUINO_H
+#ifndef MEMDUINO_H
+#define MEMDUINO_H
 
-#ifdef _WIN32
+#if defined(_WIN32)
+
 #include<Windows.h>
-#endif
+
+#endif // _WIN32
 
 typedef struct
 {
@@ -18,7 +20,7 @@ typedef struct
     unsigned int s_reclaimable;
     /* Last used mem value that was sent to the arduino */
     unsigned int used_mem;
-} memduino_mem_info;
+} MemDuinoMemInfo;
 
 typedef struct
 {
@@ -28,25 +30,25 @@ typedef struct
     unsigned int init_timeout_ms;
     /* Name of the device to open */
     char *device_name;
-#ifdef __linux__
+#if defined(__linux__)
     /* fd of the opened device */
     int device_fd;
-#elif _WIN32
+#elif defined(_WIN32)
     HANDLE commHandle;
-#endif // __linux_-
-} memduino_info;
+#endif // __linux__
+} MemDuinoInfo;
 
 
 typedef struct
 {
-    memduino_mem_info mem_info;
-    memduino_info info;
-} memduino;
+    MemDuinoMemInfo mem_info;
+    MemDuinoInfo info;
+} MemDuino;
 
 /* this will freeze the current thread */
-void start_memduino(memduino *memduino);
+void start_memduino(MemDuino *memduino);
 
 /* this spawns another thread */
-void start_memduino_async(memduino *memduino);
+void start_memduino_async(MemDuino *memduino);
 
-#endif // MEM_DUINO_H
+#endif // MEMDUINO_H

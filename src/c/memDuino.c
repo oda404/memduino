@@ -7,7 +7,7 @@
 
 #include<math.h>
 
-#ifdef __linux__
+#if defined(__linux__)
 
 #include<time.h>
 #include<string.h>
@@ -47,10 +47,13 @@ static int str_starts_with(const char *targetStr, const char *subStr)
 	return 1;
 }
 
-static void set_used_mem_mb(memduino* md)
+static void set_used_mem_mb(MemDuino* memduino)
 {
 	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	md->mem_info.used_mem = ((md->mem_info.mem_total - md->mem_info.mem_free) - (md->mem_info.buffers + (md->mem_info.cached + md->mem_info.s_reclaimable - md->mem_info.sh_mem))) / 1024;
+	memduino->mem_info.used_mem = 
+	((memduino->mem_info.mem_total - memduino->mem_info.mem_free) - 
+	(memduino->mem_info.buffers + 
+	(memduino->mem_info.cached + memduino->mem_info.s_reclaimable - memduino->mem_info.sh_mem))) /1024;
 }
 
 #endif // __linux__
@@ -73,7 +76,7 @@ static void create_packet(char *packet, unsigned int used_mem, size_t used_mem_d
 
 static void sleep_for_ms(time_t time)
 {
-#ifdef __linux__
+#if defined(__linux__)
 #if _POSIX_C_SOURCE > 199309L
 	struct timespec ts;
 	ts.tv_sec = time / 1000;
@@ -82,17 +85,15 @@ static void sleep_for_ms(time_t time)
 #else
 	usleep(time * 1000);
 #endif // _POSIX_C_SOURCE
-#elif _WIN32
+#elif defined(_WIN32)
 	Sleep(time);
-#endif // _WIN32
-
+#endif //__linux__
 }
 
 #define SLEEP_INIT_TRY_MS 1500
 
-void start_memduino(memduino *memduino)
+void start_memduino(MemDuino *memduino)
 {
-
 	unsigned int init_time = 0;
 
 	while(serial_init(memduino) == -1)
@@ -107,7 +108,7 @@ void start_memduino(memduino *memduino)
 		init_time += SLEEP_INIT_TRY_MS;
 	}
 
-#ifdef __linux__
+#if defined(__linux__)
 
 	FILE *file;
 	char line[BUFF_LENGTH];
@@ -165,7 +166,7 @@ void start_memduino(memduino *memduino)
 
 	serial_close(memduino);
 
-#elif _WIN32
+#elif defined(_WIN32)
 
 	/* Hide the console window */
 	HWND hWnd = GetConsoleWindow();
