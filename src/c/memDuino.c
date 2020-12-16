@@ -115,19 +115,19 @@ static void sleep_for_ms(time_t time)
 
 int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms)
 {
-	unsigned int init_time = 0;
+	unsigned int init_elapsed_time = 0;
 	int device_fd;
 
 	while(try_serial_init("ttyUSB0", &device_fd) == -1)
 	{
-		if(init_time >= init_timeout_ms)
+		if(init_elapsed_time >= init_timeout_ms)
 		{
 			printf("Failed to init memDuino!\n");
 			return TIMEOUT_SERIAL;
 		}
 		
 		sleep_for_ms(SLEEP_INIT_TRY_MS);
-		init_time += SLEEP_INIT_TRY_MS;
+		init_elapsed_time += SLEEP_INIT_TRY_MS;
 	}
 
 	size_t used_mem_length;
@@ -199,8 +199,6 @@ int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms
 		sleep_for_ms(update_interval_ms);
 	}
 
-	serial_close(&device_fd);
-
 #elif defined(_WIN32)
 
 	/* Hide the console window */
@@ -228,6 +226,7 @@ int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms
 	}
 
 #endif // __linux__
+	serial_close(&device_fd);
 
 	return EXIT_OK;
 }
