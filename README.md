@@ -1,8 +1,8 @@
-# MemDuino
+# memDuino
 Display your computer's RAM usage on a 7 segment 4 digit display connected to an Arduino.<br>
 
 ## Setup
-- Keep in mind that currently MemDuino only works on Linux
+- For now memDuino needs to be compiled from source.
 - To get this working you will probably need to fiddle with the pin defines
 in the arduino sketch and change the deviceName in src/c/main.c
 (by default ttyUSB0) to fit your situation.
@@ -11,25 +11,18 @@ in the arduino sketch and change the deviceName in src/c/main.c
 
 ## Linux:
 ```console
-git clone https://github.com/oda404/MemDuino
+git clone https://github.com/oda404/memDuino
 cd MemDuino
 mkdir build && cd build
 cmake ..
-```
-#### If you only want to build the binary, do:
-```console
 make
-```
-You can now run memDuino with:
-```console
-sudo ./memDuino
-```
-#### If you also want to start memDuino at boot, do:
-```console
 sudo make install
-cd ../src/linux
-sudo ./startAtBoot.sh
 ```
+### Uninstallation:
+Run `src/linux/uninstall.sh`
+
+## Windows:
+Compile the source however you like and set the memDuino executeable to run at startup.
 
 ## Info
-- Only supports RAM values that range from 0 to 99999 (MB) assuming your display has a DP.
+- Only supports RAM values that range from 0 to 99999 (MB) assuming your display has a decimal point.
