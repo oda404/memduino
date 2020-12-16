@@ -18,7 +18,7 @@ add_executable(${PROJECT_NAME}
 set(link_libs "")
 
 if(UNIX)
-    install(CODE "file(COPY memDuino DESTINATION /usr/bin)")
+    install(CODE "execute_process(COMMAND ../src/linux/install.sh)")
     set(link_libs ${link_libs} "m")
 endif(UNIX)
 

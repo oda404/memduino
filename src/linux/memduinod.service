@@ -1,5 +1,5 @@
 [Unit]
-Description=MemDuino systemd service
+Description=memDuino systemd service
 
 [Service]
 Type=simple
