@@ -7,6 +7,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#define SERIAL_INIT_OK 0
+
 #if defined(__linux__)
 
 #include<unistd.h>
@@ -20,42 +22,48 @@
 
 #endif // __linux__
 
-int serial_init(MemDuino *memduino)
+int try_serial_init(const char *device_name, int *out_device_fd)
 {
 #if defined(__linux__)
 
-	/* strlen("/dev/") == 5 */
 	char *devicePath;
-	devicePath = malloc(5 + strlen(memduino->info.device_name) + 1);
+	/* strlen("/dev/") == 5 */
+	devicePath = malloc(5 + strlen(device_name) + 1);
 	strcpy(devicePath, "/dev/");
-	strcat(devicePath, memduino->info.device_name);
+	strcat(devicePath, device_name);
 
-	memduino->info.device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
+	*out_device_fd = open(devicePath, O_WRONLY /* O_RDWR */ | O_NOCTTY | O_SYNC);
 
 	free(devicePath);
 
-	if(memduino->info.device_fd < 0)
+	if(*out_device_fd < 0)
 	{
-		printf("Error when oppening /dev/%s: %s\n", memduino->info.device_name, strerror(errno));
-		return -1;
+		printf("Error oppening /dev/%s: %s\n", device_name, strerror(errno));
+		return errno;
 	}
 
 	struct termios tty;
 
-	if(tcgetattr(memduino->info.device_fd, &tty) != 0)
+	if(tcgetattr(*out_device_fd, &tty) != 0)
 	{
 		printf("Error from tcgetattr: %s\n", strerror(errno));
-		return -1;
+		return errno;
 	}
 
 	if(cfsetospeed(&tty, (speed_t)B9600) != 0)
 	{
 		printf("Error from cfsetospeed: %s\n", strerror(errno));
-		return -1;
+		return errno;
 	}
 
+	// if(cfsetispeed(&tty, (speed_t)B9600) != 0)
+	// {
+	// 	printf("Error from cfsetospeed: %s\n", strerror(errno));
+	// 	return -1;
+	// }
+
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
-	
+
 	tty.c_oflag = 0;
 
 	tty.c_cflag &= ~(PARENB | PARODD); 			// no parity
@@ -63,10 +71,10 @@ int serial_init(MemDuino *memduino)
 	tty.c_cflag &= ~CSTOPB;
 	tty.c_cflag &= ~CRTSCTS;
 
-	if(tcsetattr(memduino->info.device_fd, TCSANOW, &tty) != 0)
+	if(tcsetattr(*out_device_fd, TCSANOW, &tty) != 0)
 	{
 		printf("Error from tcsetattr: %s\n", strerror(errno));
-		return -1;
+		return errno;
 	}
 
 #elif defined(_WIN32)
@@ -114,14 +122,14 @@ int serial_init(MemDuino *memduino)
 
 #endif //__linux__
 
-	return 0;
+	return SERIAL_INIT_OK;
 }
 
-void write_to_serial(const MemDuino *memduino, const char *data)
+void write_to_serial(const int *device_fd, const char *data)
 {
 #if defined(__linux__)
 	size_t n = strlen(data);
-	size_t written = write(memduino->info.device_fd, data, n);
+	size_t written = write(*device_fd, data, n);
 	if(written < n)
 	{
 		printf("Written %ld out of %ld\n", written, n);
@@ -134,14 +142,14 @@ void write_to_serial(const MemDuino *memduino, const char *data)
 #endif //__linux__
 }
 
-void serial_close(const MemDuino *memduino)
+void serial_close(const int *device_fd)
 {
 #if defined(__linux__)
 
-	int status = close(memduino->info.device_fd);
+	int status = close(*device_fd);
 	if(status == -1)
 	{
-		printf("Error when closing %d: %s", memduino->info.device_fd, strerror(errno));
+		printf("Error when closing %d: %s", *device_fd, strerror(errno));
 	}
 
 #elif defined(_WIN32)

@@ -2,10 +2,12 @@
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
 #include"memDuino.h"
-
 #include"serial.h"
-
 #include<math.h>
+#include"exitcodes.h"
+
+#define SLEEP_INIT_TRY_MS 1500
+#define MAGIC 0x1BADF14D
 
 #if defined(__linux__)
 
@@ -16,11 +18,22 @@
 #include<unistd.h>
 #define BUFF_LENGTH 64
 
-static unsigned int parse_uint_from_str(const char *str)
+typedef struct
+{
+    unsigned int total;
+    unsigned int buffers;
+    unsigned int cached;
+    unsigned int free;
+    unsigned int shared;
+    unsigned int s_reclaimable;
+    /* Last used mem value that was sent to the arduino */
+    unsigned int used;
+} MemInfo;
+
+static unsigned int try_parse_uint(const char *str)
 {
 	unsigned int integer = 0;
 	size_t i = 0;
-
 	for(; i < strlen(str); ++i)
 	{
 		if((int)str[i] >= 48 && (int)str[i] <= 57)
@@ -32,13 +45,19 @@ static unsigned int parse_uint_from_str(const char *str)
 	return integer;
 }
 
-static int str_starts_with(const char *targetStr, const char *subStr)
+static int str_starts_with(const char *str, const char *subStr)
 {
-	size_t i = 0;
+	const int sub_str_len = strlen(subStr);
 
-	for(; i < strlen(subStr); ++i)
+	if(sub_str_len > strlen(str))
 	{
-		if(targetStr[i] != subStr[i])
+		return 0;
+	}
+
+	size_t i = 0;
+	for(; i < sub_str_len; ++i)
+	{
+		if(str[i] != subStr[i])
 		{
 			return 0;
 		}
@@ -47,30 +66,34 @@ static int str_starts_with(const char *targetStr, const char *subStr)
 	return 1;
 }
 
-static void set_used_mem_mb(MemDuino* memduino)
+static void set_used_mem_mb(MemInfo *out_memInfo)
 {
 	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	memduino->mem_info.used_mem = 
-	((memduino->mem_info.mem_total - memduino->mem_info.mem_free) - 
-	(memduino->mem_info.buffers + 
-	(memduino->mem_info.cached + memduino->mem_info.s_reclaimable - memduino->mem_info.sh_mem))) /1024;
+	out_memInfo->used = (
+		out_memInfo->total - 
+		out_memInfo->free - (
+			out_memInfo->buffers + (
+				out_memInfo->cached + out_memInfo->s_reclaimable - out_memInfo->shared
+			)
+		)
+	) / 1024;
 }
 
 #endif // __linux__
 
-static void create_packet(char *packet, unsigned int used_mem, size_t used_mem_dig_cnt)
+static void create_packet(char *out_packet, unsigned int used_mem, size_t used_mem_length)
 {
 	size_t i = 0;
 	
-	packet[i++] = 'S';
+	out_packet[i++] = 'S';
 
-	while(i <= used_mem_dig_cnt)
+	while(i <= used_mem_length)
 	{
-		packet[i] = (char)(used_mem / (int)pow(10, used_mem_dig_cnt - i) + 48);
-		used_mem = used_mem % (int)pow(10, used_mem_dig_cnt - i++);
+		out_packet[i] = (char)(used_mem / (int)pow(10, used_mem_length - i) + 48);
+		used_mem %= (int)pow(10, used_mem_length - i++);
 	}
 
-	packet[i] = 'E';
+	out_packet[i] = 'E';
 	/* start and end the packet with S and E respectively */
 }
 
@@ -90,81 +113,93 @@ static void sleep_for_ms(time_t time)
 #endif //__linux__
 }
 
-#define SLEEP_INIT_TRY_MS 1500
-
-void start_memduino(MemDuino *memduino)
+int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms)
 {
 	unsigned int init_time = 0;
+	int device_fd;
 
-	while(serial_init(memduino) == -1)
+	while(try_serial_init("ttyUSB0", &device_fd) == -1)
 	{
-		if(init_time >= memduino->info.init_timeout_ms)
+		if(init_time >= init_timeout_ms)
 		{
 			printf("Failed to init memDuino!\n");
-			return;
+			return TIMEOUT_SERIAL;
 		}
 		
 		sleep_for_ms(SLEEP_INIT_TRY_MS);
 		init_time += SLEEP_INIT_TRY_MS;
 	}
 
+	size_t used_mem_length;
+	char *packet;
+
 #if defined(__linux__)
 
 	FILE *file;
 	char line[BUFF_LENGTH];
+	MemInfo mem_info = {
+		.total = 0,
+		.buffers = 0,
+		.cached = 0,
+		.free = 0,
+		.shared = 0,
+		.s_reclaimable = 0,
+		.used = 0
+	};
 
 	while(1)
 	{
 		if(!(file = fopen("/proc/meminfo", "r")))
 		{
-			printf("Fatal error: meminfo was not found in /proc/\n");
-			break;
+			printf("Fatal error: /proc/meminfo not found\n");
+			serial_close(&device_fd);
+			return MEMINFO_NOT_FOUND;
 		}
 
 		while(fgets(line, BUFF_LENGTH, file))
 		{
 			if(str_starts_with(line, "MemTotal"))
 			{
-				memduino->mem_info.mem_total = parse_uint_from_str(line);
+				mem_info.total = try_parse_uint(line);
 			}
 			else if(str_starts_with(line, "Buffers"))
 			{
-				memduino->mem_info.buffers = parse_uint_from_str(line);
+				mem_info.buffers = try_parse_uint(line);
 			}
 			else if(str_starts_with(line, "Cached"))
 			{
-				memduino->mem_info.cached = parse_uint_from_str(line);
+				mem_info.cached = try_parse_uint(line);
 			}
 			else if(str_starts_with(line, "MemFree"))
 			{
-				memduino->mem_info.mem_free = parse_uint_from_str(line);
+				mem_info.free = try_parse_uint(line);
 			}
 			else if(str_starts_with(line, "Shmem"))
 			{
-				memduino->mem_info.sh_mem = parse_uint_from_str(line);
+				mem_info.shared = try_parse_uint(line);
 			}
 			else if(str_starts_with(line, "SReclaimable"))
 			{
-				memduino->mem_info.s_reclaimable = parse_uint_from_str(line);
+				mem_info.s_reclaimable = try_parse_uint(line);
 			}
 		}
 
 		fclose(file);
 
-		set_used_mem_mb(memduino);
+		set_used_mem_mb(&mem_info);
 
-		size_t used_mem_dig_cnt = (int)log10(memduino->mem_info.used_mem) + 1;
-		char *packet = malloc(used_mem_dig_cnt + 2);
+		used_mem_length = (int)log10(mem_info.used) + 1;
+		packet = malloc(used_mem_length + 2);
 
-		create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
+		create_packet(packet, mem_info.used, used_mem_length);
 
-		write_to_serial(memduino, packet);
+		write_to_serial(&device_fd, packet);
 
 		free(packet);
-		sleep_for_ms(memduino->info.update_interval_ms);
+		sleep_for_ms(update_interval_ms);
 	}
 
-	serial_close(memduino);
+	serial_close(&device_fd);
 
 #elif defined(_WIN32)
 
@@ -179,12 +214,12 @@ void start_memduino(MemDuino *memduino)
 	{
 		GlobalMemoryStatusEx(&statex);
 
-		memduino->mem_info.used_mem = (statex.ullTotalPhys - statex.ullAvailPhys) / (1024 * 1024);
+		mem_info.used_mem = (statex.ullTotalPhys - statex.ullAvailPhys) / (1024 * 1024);
 
-		size_t used_mem_dig_cnt = (int)log10(memduino->mem_info.used_mem) + 1;
+		size_t used_mem_dig_cnt = (int)log10(mem_info.used_mem) + 1;
 		char* packet = malloc(used_mem_dig_cnt + 2);
 
-		create_packet(packet, memduino->mem_info.used_mem, used_mem_dig_cnt);
+		create_packet(packet, mem_info.used_mem, used_mem_dig_cnt);
 
 		write_to_serial(memduino, packet);
 
@@ -193,4 +228,6 @@ void start_memduino(MemDuino *memduino)
 	}
 
 #endif // __linux__
+
+	return EXIT_OK;
 }

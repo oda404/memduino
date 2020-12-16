@@ -6,8 +6,8 @@
 
 #include"memDuino.h"
 
-int serial_init(MemDuino *memduino);
-void write_to_serial(const MemDuino *memduino, const char *data);
-void serial_close(const MemDuino *memduino);
+int try_serial_init(const char *device_name, int *device_fd);
+void write_to_serial(const int *device_fd, const char *data);
+void serial_close(const int *device_fd);
 
 #endif // MEMDUINO_SERIAL_H

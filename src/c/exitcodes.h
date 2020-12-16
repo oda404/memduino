@@ -1,0 +1,3 @@
+#define EXIT_OK 0
+#define TIMEOUT_SERIAL 1
+#define MEMINFO_NOT_FOUND 2

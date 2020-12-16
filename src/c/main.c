@@ -3,18 +3,13 @@
 
 #include"memDuino.h"
 
+#define DEFAULT_UPDATE_INTERVAL_MS 1000
+#define DEFAULT_INIT_TIMEOUT_MS 10000
+
 int main(void)
 {
-	MemDuino memduino;
-#if defined(_WIN32)
-	memduino.info.device_name = "COM3";
-#elif defined(__linux__)
-	memduino.info.device_name = "ttyUSB0";
-#endif // _WIN32
-	memduino.info.update_interval_ms = 1000;
-	memduino.info.init_timeout_ms = 10000;
-
-	start_memduino(&memduino);
-	
-	return 0;
+	return start_memduino(
+		DEFAULT_UPDATE_INTERVAL_MS, 
+		DEFAULT_INIT_TIMEOUT_MS
+	);
 }
