@@ -18,7 +18,7 @@ make
 sudo make install
 ```
 ### Uninstallation:
-Run `src/linux/uninstall.sh`
+Run `sudo make uninstall` in the build directory.
 
 ## Windows:
 (broken)

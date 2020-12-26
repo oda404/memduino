@@ -16,6 +16,8 @@ add_executable(${PROJECT_NAME}
     src/c/exitcodes.h
 )
 
+add_custom_target(uninstall COMMAND "../src/linux/uninstall.sh")
+
 set(link_libs "")
 
 if(UNIX)
