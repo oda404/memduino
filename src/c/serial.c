@@ -7,8 +7,6 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#define SERIAL_INIT_OK 0
-
 #if defined(__linux__)
 
 #include<unistd.h>
@@ -32,7 +30,7 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 	strcpy(devicePath, "/dev/");
 	strcat(devicePath, device_name);
 
-	*out_device_fd = open(devicePath, O_WRONLY /* O_RDWR */ | O_NOCTTY | O_SYNC);
+	*out_device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
 
 	free(devicePath);
 
@@ -56,14 +54,8 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 		return errno;
 	}
 
-	// if(cfsetispeed(&tty, (speed_t)B9600) != 0)
-	// {
-	// 	printf("Error from cfsetospeed: %s\n", strerror(errno));
-	// 	return -1;
-	// }
-
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
-
+	
 	tty.c_oflag = 0;
 
 	tty.c_cflag &= ~(PARENB | PARODD); 			// no parity

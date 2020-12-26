@@ -4,7 +4,7 @@
 #ifndef MEMDUINO_SERIAL_H
 #define MEMDUINO_SERIAL_H
 
-#include"memDuino.h"
+#define SERIAL_INIT_OK 0
 
 int try_serial_init(const char *device_name, int *device_fd);
 void write_to_serial(const int *device_fd, const char *data);

@@ -47,7 +47,7 @@ static unsigned int try_parse_uint(const char *str)
 
 static int str_starts_with(const char *str, const char *subStr)
 {
-	const int sub_str_len = strlen(subStr);
+	const unsigned int sub_str_len = strlen(subStr);
 
 	if(sub_str_len > strlen(str))
 	{
@@ -118,7 +118,7 @@ int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms
 	unsigned int init_elapsed_time = 0;
 	int device_fd;
 
-	while(try_serial_init("ttyUSB0", &device_fd) == -1)
+	while(try_serial_init("ttyUSB0", &device_fd) != SERIAL_INIT_OK)
 	{
 		if(init_elapsed_time >= init_timeout_ms)
 		{

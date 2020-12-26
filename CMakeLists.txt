@@ -5,7 +5,7 @@ project(memDuino)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "-O2 -Wall")
+set(CMAKE_C_FLAGS "-O2 -Wall -Wextra")
 
 add_executable(${PROJECT_NAME}
     src/c/main.c
@@ -13,6 +13,7 @@ add_executable(${PROJECT_NAME}
     src/c/memDuino.h
     src/c/serial.c
     src/c/serial.h
+    src/c/exitcodes.h
 )
 
 set(link_libs "")
