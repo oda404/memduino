@@ -69,14 +69,7 @@ static int str_starts_with(const char *str, const char *subStr)
 static void set_used_mem_mb(MemInfo *out_memInfo)
 {
 	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	out_memInfo->used = (
-		out_memInfo->total - 
-		out_memInfo->free - (
-			out_memInfo->buffers + (
-				out_memInfo->cached + out_memInfo->s_reclaimable - out_memInfo->shared
-			)
-		)
-	) / 1024;
+	out_memInfo->used = (out_memInfo->total - out_memInfo->free-(out_memInfo->buffers + (out_memInfo->cached + out_memInfo->s_reclaimable - out_memInfo->shared))) / 1024;
 }
 
 #endif // __linux__
@@ -158,27 +151,27 @@ int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms
 
 		while(fgets(line, BUFF_LENGTH, file))
 		{
-			if(str_starts_with(line, "MemTotal"))
+			if(str_starts_with(line, "MemTotal:"))
 			{
 				mem_info.total = try_parse_uint(line);
 			}
-			else if(str_starts_with(line, "Buffers"))
+			else if(str_starts_with(line, "Buffers:"))
 			{
 				mem_info.buffers = try_parse_uint(line);
 			}
-			else if(str_starts_with(line, "Cached"))
+			else if(str_starts_with(line, "Cached:"))
 			{
 				mem_info.cached = try_parse_uint(line);
 			}
-			else if(str_starts_with(line, "MemFree"))
+			else if(str_starts_with(line, "MemFree:"))
 			{
 				mem_info.free = try_parse_uint(line);
 			}
-			else if(str_starts_with(line, "Shmem"))
+			else if(str_starts_with(line, "Shmem:"))
 			{
 				mem_info.shared = try_parse_uint(line);
 			}
-			else if(str_starts_with(line, "SReclaimable"))
+			else if(str_starts_with(line, "SReclaimable:"))
 			{
 				mem_info.s_reclaimable = try_parse_uint(line);
 			}
