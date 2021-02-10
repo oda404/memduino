@@ -1,9 +1,0 @@
-[Unit]
-Description=memduino systemd service
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/memduino
-
-[Install]
-WantedBy=multi-user.target

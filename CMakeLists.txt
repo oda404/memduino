@@ -2,29 +2,9 @@ cmake_minimum_required(VERSION 3.2)
 
 project(memduino)
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+add_subdirectory(daemon)
 
-set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -Werror=format-security -fstack-protector-all -D_FORTIFY_SOURCE=2")
-
-add_executable(${PROJECT_NAME}
-    src/c/main.c
-    src/c/memDuino.c
-    src/c/memDuino.h
-    src/c/serial.c
-    src/c/serial.h
-    src/c/exitcodes.h
-)
-
-add_custom_target(uninstall COMMAND "../src/linux/uninstall.sh")
-
-set(link_libs "")
-
-if(UNIX)
-    install(CODE "execute_process(COMMAND ../src/linux/install.sh)")
-    set(link_libs ${link_libs} "m")
+if(UNIX)    
+    add_custom_target(uninstall-daemon COMMAND "../linux/uninstall-daemon.sh")
+    add_custom_target(install-daemon COMMAND "../linux/install-daemon.sh")
 endif(UNIX)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ${link_libs}
-)
