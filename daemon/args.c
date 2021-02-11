@@ -195,7 +195,7 @@ UI get_init_try_sleep_arg(int argc, char **argv, UI *out)
     return ARG_NOT_FOUND;
 }
 
-UI get_serial_port_arg(int argc, char **argv, char *out)
+UI get_serial_port_arg(int argc, char **argv, char **out)
 {
     int arg_index = get_arg_index(
         argc,
@@ -214,8 +214,9 @@ UI get_serial_port_arg(int argc, char **argv, char *out)
         }
         
         UI len = strlen(argv[arg_index + 1]);
-        out = realloc(out, sizeof(char) * (len + 1));
-        strcpy(out, argv[arg_index + 1]);
+        free(*out);
+        *out = malloc(sizeof(char) * (len + 1));
+        strcpy(*out, argv[arg_index + 1]);
 
         return ARG_OK;
     }

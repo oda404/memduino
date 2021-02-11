@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	if(get_serial_port_arg(
 		argc,
 		argv,
-		serial_port
+		&serial_port
 	) == ARG_BAD) return BAD_ARG_FOUND;
 
 	if(init_timeout_ms < init_try_sleep_ms)

@@ -13,6 +13,6 @@ UI check_for_help_arg(int argc, char **argv);
 UI get_update_interval_arg(int argc, char **argv, UI *out);
 UI get_init_timeout_arg(int argc, char **argv, UI *out);
 UI get_init_try_sleep_arg(int argc, char **argv, UI *out);
-UI get_serial_port_arg(int argc, char **argv, char *out);
+UI get_serial_port_arg(int argc, char **argv, char **out);
 
 #endif // MEMDUINO_ARGS_H
