@@ -94,7 +94,7 @@ static void create_packet(
 	}
 
 	out_packet[i++] = 'E';
-	out_packet = '\0';
+	out_packet[i] = '\0';
 	/* start and end the packet with S and E respectively */
 }
 
