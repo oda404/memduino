@@ -2,13 +2,13 @@
 Display your computer's RAM usage on a 7 segment 4 digit display connected to an Arduino.<br>
 
 ## Setup
-- For now memDuino needs to be compiled from source.
+- For now memduino needs to be compiled from source.
 
 #### Whether you are on Linux or Windows, you will need to upload the skerch_memduino/sketch_memduino.ino to your Arduino
 
 ## Linux:
 ```console
-git clone https://github.com/oda404/memDuino
+git clone https://github.com/oda404/memduino
 cd memduino
 mkdir build && cd build
 cmake ..
@@ -33,7 +33,7 @@ Run `sudo make uninstall-daemon` in the build directory.
 
 ## Windows:
 (broken)
-Compile the source however you like and set the memDuino executeable to run at startup.
+Compile the source however you like and set the meduino executable to run at startup.
 
 ## Info
 - Only supports RAM values that range from 0 to 99999 (MB) assuming your display has a decimal point.
