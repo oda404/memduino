@@ -116,17 +116,18 @@ static void sleep_for_ms(time_t time)
 int start_memduino(
 	UI update_interval_ms,
     UI init_timeout_ms,
-    UI init_try_sleep_ms
+    UI init_try_sleep_ms,
+	char *serial_port
 )
 {
 	UI init_elapsed_time = 0;
 	int device_fd;
 
-	while(try_serial_init("ttyUSB0", &device_fd) != SERIAL_INIT_OK)
+	while(try_serial_init(serial_port, &device_fd) != SERIAL_INIT_OK)
 	{
 		if(init_elapsed_time >= init_timeout_ms)
 		{
-			printf("Failed to init memDuino!\n");
+			printf("Timed out trying to init the serial port\n");
 			return SERIAL_TIMEOUT;
 		}
 		
@@ -237,6 +238,7 @@ int start_memduino(
 
 #endif // __linux__
 	serial_close(&device_fd);
+	free(serial_port);
 
 	return EXIT_OK;
 }

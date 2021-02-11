@@ -1,3 +1,4 @@
 #define EXIT_OK 0
 #define SERIAL_TIMEOUT 1
 #define MEMINFO_OPEN_ERR 2
+#define BAD_ARG_FOUND 3

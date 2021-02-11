@@ -9,7 +9,8 @@
 int start_memduino(
     UI update_interval_ms,
     UI init_timeout_ms,
-    UI init_try_sleep_ms
+    UI init_try_sleep_ms,
+    char *serial_port
 );
 
 #endif // MEMDUINO_H

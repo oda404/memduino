@@ -25,9 +25,7 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 #if defined(__linux__)
 
 	char *devicePath;
-	/* strlen("/dev/") == 5 */
-	devicePath = malloc(5 + strlen(device_name) + 1);
-	strcpy(devicePath, "/dev/");
+	devicePath = malloc(strlen(device_name) + 1);
 	strcat(devicePath, device_name);
 
 	*out_device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
@@ -36,7 +34,7 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 
 	if(*out_device_fd < 0)
 	{
-		printf("Error oppening /dev/%s: %s\n", device_name, strerror(errno));
+		printf("Error oppening %s: %s\n", device_name, strerror(errno));
 		return errno;
 	}
 
