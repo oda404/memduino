@@ -128,7 +128,7 @@ int start_memduino(
 		if(init_elapsed_time >= init_timeout_ms)
 		{
 			printf("Failed to init memDuino!\n");
-			return TIMEOUT_SERIAL;
+			return SERIAL_TIMEOUT;
 		}
 		
 		sleep_for_ms(SLEEP_INIT_TRY_MS);
@@ -156,9 +156,9 @@ int start_memduino(
 	{
 		if(!(file = fopen("/proc/meminfo", "r")))
 		{
-			printf("Fatal error: /proc/meminfo not found\n");
+			printf("Fatal error: couldn't open /proc/meminfo\n");
 			serial_close(&device_fd);
-			return MEMINFO_NOT_FOUND;
+			return MEMINFO_OPEN_ERR;
 		}
 
 		while(fgets(line, BUFF_LENGTH, file))
@@ -200,7 +200,7 @@ int start_memduino(
 		set_used_mem_mb(&mem_info);
 
 		used_mem_length = (int)log10(mem_info.used) + 1;
-		packet = malloc(used_mem_length + 2);
+		packet = malloc(sizeof(char) * (used_mem_length + 2));
 
 		create_packet(packet, mem_info.used, used_mem_length);
 
