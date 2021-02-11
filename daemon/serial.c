@@ -24,13 +24,7 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 {
 #if defined(__linux__)
 
-	char *devicePath;
-	devicePath = malloc(strlen(device_name) + 1);
-	strcat(devicePath, device_name);
-
-	*out_device_fd = open(devicePath, O_WRONLY | O_NOCTTY | O_SYNC);
-
-	free(devicePath);
+	*out_device_fd = open(device_name, O_WRONLY | O_NOCTTY | O_SYNC);
 
 	if(*out_device_fd < 0)
 	{
