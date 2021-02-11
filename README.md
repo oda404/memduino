@@ -4,7 +4,7 @@ Display your computer's RAM usage on a 7 segment 4 digit display connected to an
 ## Setup
 - For now memduino needs to be compiled from source.
 
-#### Whether you are on Linux or Windows, you will need to upload the skerch_memduino/sketch_memduino.ino to your Arduino
+#### Whether you are on Linux or Windows, you will need to upload the sketch_memduino/sketch_memduino.ino to your Arduino
 
 ## Linux:
 ```console
