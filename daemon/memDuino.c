@@ -17,22 +17,24 @@
 #include<stdlib.h>
 #include<unistd.h>
 #define BUFF_LENGTH 64
+#define UI unsigned int
 
 typedef struct
 {
-    unsigned int total;
-    unsigned int buffers;
-    unsigned int cached;
-    unsigned int free;
-    unsigned int shared;
-    unsigned int s_reclaimable;
+    UI total;
+    UI buffers;
+    UI cached;
+    UI free;
+    UI shared;
+    UI s_reclaimable;
     /* Last used mem value that was sent to the arduino */
-    unsigned int used;
+    UI used;
 } MemInfo;
 
-static unsigned int try_parse_uint(const char *str)
+static UI 
+parse_uint_from_meminfo_line(const char *str)
 {
-	unsigned int integer = 0;
+	UI integer = 0;
 	size_t i = 0;
 	for(; i < strlen(str); ++i)
 	{
@@ -45,9 +47,12 @@ static unsigned int try_parse_uint(const char *str)
 	return integer;
 }
 
-static int str_starts_with(const char *str, const char *subStr)
+static int str_starts_with(
+	const char *str, 
+	const char *subStr
+)
 {
-	const unsigned int sub_str_len = strlen(subStr);
+	const UI sub_str_len = strlen(subStr);
 
 	if(sub_str_len > strlen(str))
 	{
@@ -74,7 +79,11 @@ static void set_used_mem_mb(MemInfo *out_memInfo)
 
 #endif // __linux__
 
-static void create_packet(char *out_packet, unsigned int used_mem, size_t used_mem_length)
+static void create_packet(
+	char *out_packet, 
+	UI used_mem, 
+	size_t used_mem_length
+)
 {
 	size_t i = 0;
 	
@@ -106,9 +115,12 @@ static void sleep_for_ms(time_t time)
 #endif //__linux__
 }
 
-int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms)
+int start_memduino(
+	UI update_interval_ms, 
+	UI init_timeout_ms
+)
 {
-	unsigned int init_elapsed_time = 0;
+	UI init_elapsed_time = 0;
 	int device_fd;
 
 	while(try_serial_init("ttyUSB0", &device_fd) != SERIAL_INIT_OK)
@@ -153,27 +165,33 @@ int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms
 		{
 			if(str_starts_with(line, "MemTotal:"))
 			{
-				mem_info.total = try_parse_uint(line);
+				mem_info.total = 
+				parse_uint_from_meminfo_line(line);
 			}
 			else if(str_starts_with(line, "Buffers:"))
 			{
-				mem_info.buffers = try_parse_uint(line);
+				mem_info.buffers = 
+				parse_uint_from_meminfo_line(line);
 			}
 			else if(str_starts_with(line, "Cached:"))
 			{
-				mem_info.cached = try_parse_uint(line);
+				mem_info.cached = 
+				parse_uint_from_meminfo_line(line);
 			}
 			else if(str_starts_with(line, "MemFree:"))
 			{
-				mem_info.free = try_parse_uint(line);
+				mem_info.free = 
+				parse_uint_from_meminfo_line(line);
 			}
 			else if(str_starts_with(line, "Shmem:"))
 			{
-				mem_info.shared = try_parse_uint(line);
+				mem_info.shared = 
+				parse_uint_from_meminfo_line(line);
 			}
 			else if(str_starts_with(line, "SReclaimable:"))
 			{
-				mem_info.s_reclaimable = try_parse_uint(line);
+				mem_info.s_reclaimable = 
+				parse_uint_from_meminfo_line(line);
 			}
 		}
 
