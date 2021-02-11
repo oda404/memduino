@@ -1,24 +1,35 @@
-# memDuino
+# memduino
 Display your computer's RAM usage on a 7 segment 4 digit display connected to an Arduino.<br>
 
 ## Setup
 - For now memDuino needs to be compiled from source.
-- To get this working you will probably need to fiddle with the pin defines in the arduino sketch and change the first argument of the try_serial_init() function in src/c/memDuino.c
-(by default ttyUSB0) to fit your situation.
 
-#### Whether you are on Linux or Windows, you will need to upload the src/arduino/sketch_memDuino.ino to your Arduino
+#### Whether you are on Linux or Windows, you will need to upload the skerch_memduino/sketch_memduino.ino to your Arduino
 
 ## Linux:
 ```console
 git clone https://github.com/oda404/memDuino
-cd memDuino
+cd memduino
 mkdir build && cd build
 cmake ..
 make
-sudo make install
+sudo make install-daemon
 ```
+
+This will install memduinod as a systemd service and will run with the default options:
+- Update interval: 1000ms
+- Init timeout: 10000ms
+- Init try sleep time: 1500ms (sleep time between serial init attempts)
+- Serial port: /dev/ttyUSB0
+
+If you want to customize these options you will have to run memduinod from the terminal (at least for now). For that, first stop the systemd service:<br>
+`# systemctl stop memduinod`<br>
+`# systemctl disable memduinod`<br>
+And then you can run:<br>
+`$ memduinod -h`<br>
+To see all the available options.
 ### Uninstallation:
-Run `sudo make uninstall` in the build directory.
+Run `sudo make uninstall-daemon` in the build directory.
 
 ## Windows:
 (broken)
