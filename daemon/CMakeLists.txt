@@ -5,7 +5,7 @@ project(memduinod)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -Werror=format-security -fstack-protector-all -D_FORTIFY_SOURCE=2")
+set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -fstack-protector-all")
 
 add_executable(${PROJECT_NAME}
     main.c
