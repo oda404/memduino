@@ -20,6 +20,8 @@ set(link_libs "")
 
 if(UNIX)
     set(link_libs ${link_libs} "m")
+    add_custom_target(uninstall-daemon COMMAND ${CMAKE_SOURCE_DIR}/linux/uninstall-daemon.sh)
+    add_custom_target(install-daemon COMMAND ${CMAKE_SOURCE_DIR}/linux/install-daemon.sh)
 endif(UNIX)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
