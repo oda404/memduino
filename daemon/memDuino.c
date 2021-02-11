@@ -93,7 +93,8 @@ static void create_packet(
 		used_mem %= (int)pow(10, used_mem_length - i++);
 	}
 
-	out_packet[i] = 'E';
+	out_packet[i++] = 'E';
+	out_packet = '\0';
 	/* start and end the packet with S and E respectively */
 }
 
@@ -200,7 +201,7 @@ int start_memduino(
 		set_used_mem_mb(&mem_info);
 
 		used_mem_length = (int)log10(mem_info.used) + 1;
-		packet = malloc(sizeof(char) * (used_mem_length + 2));
+		packet = malloc(sizeof(char) * (used_mem_length + 3));
 
 		create_packet(packet, mem_info.used, used_mem_length);
 
