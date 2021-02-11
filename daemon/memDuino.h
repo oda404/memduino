@@ -4,6 +4,12 @@
 #ifndef MEMDUINO_H
 #define MEMDUINO_H
 
-int start_memduino(unsigned int update_interval_ms, unsigned int init_timeout_ms);
+#define UI unsigned int
+
+int start_memduino(
+    UI update_interval_ms,
+    UI init_timeout_ms,
+    UI init_try_sleep_ms
+);
 
 #endif // MEMDUINO_H

@@ -6,7 +6,6 @@
 #include<math.h>
 #include"exitcodes.h"
 
-#define SLEEP_INIT_TRY_MS 1500
 #define MAGIC 0x1BADF14D
 
 #if defined(__linux__)
@@ -17,7 +16,6 @@
 #include<stdlib.h>
 #include<unistd.h>
 #define BUFF_LENGTH 64
-#define UI unsigned int
 
 typedef struct
 {
@@ -116,8 +114,9 @@ static void sleep_for_ms(time_t time)
 }
 
 int start_memduino(
-	UI update_interval_ms, 
-	UI init_timeout_ms
+	UI update_interval_ms,
+    UI init_timeout_ms,
+    UI init_try_sleep_ms
 )
 {
 	UI init_elapsed_time = 0;
@@ -131,8 +130,8 @@ int start_memduino(
 			return SERIAL_TIMEOUT;
 		}
 		
-		sleep_for_ms(SLEEP_INIT_TRY_MS);
-		init_elapsed_time += SLEEP_INIT_TRY_MS;
+		sleep_for_ms(init_try_sleep_ms);
+		init_elapsed_time += init_try_sleep_ms;
 	}
 
 	size_t used_mem_length;
