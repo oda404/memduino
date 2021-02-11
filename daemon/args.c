@@ -1,3 +1,6 @@
+// Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
+// Licensed under the MIT license found in the LICENSE file in the root of this repository.
+
 #include"args.h"
 
 #include<string.h>
@@ -42,7 +45,7 @@ static int get_arg_index(
 )
 {
     UI i = 0;
-    for(; i < argc; ++i)
+    for(; i < (UI)argc; ++i)
     {
         if(
             strcmp(argv[i], arg_short) == 0 || 
@@ -211,8 +214,7 @@ UI get_serial_port_arg(int argc, char **argv, char *out)
         }
         
         UI len = strlen(argv[arg_index + 1]);
-        free(out);
-        out = malloc(sizeof(char) * (len + 1));
+        out = realloc(out, sizeof(char) * (len + 1));
         strcpy(out, argv[arg_index + 1]);
 
         return ARG_OK;
