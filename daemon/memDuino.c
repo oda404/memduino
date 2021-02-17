@@ -239,7 +239,6 @@ int start_memduino(
 
 #endif // __linux__
 	serial_close(&device_fd);
-	free(serial_port);
 
 	return EXIT_OK;
 }
