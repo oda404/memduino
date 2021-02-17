@@ -26,7 +26,7 @@ If you want to customize these options you will have to open up /etc/memduino/.a
 `ARGS=`. <br>
 For these new arguments to take effect run:<br>
 `systemctl restart memduinod`.<br>
-Too see a list of all the arguments run:<br>
+To see a list of all the available arguments run:<br>
 `memduinod -h`
 
 ### Uninstallation:
