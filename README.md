@@ -22,12 +22,13 @@ This will install memduinod as a systemd service and will run with the default o
 - Init try sleep time: 1500ms (sleep time between serial init attempts)
 - Serial port: /dev/ttyUSB0
 
-If you want to customize these options you will have to run memduinod from the terminal (at least for now). For that, first stop the systemd service:<br>
-`# systemctl stop memduinod`<br>
-`# systemctl disable memduinod`<br>
-And then you can run:<br>
-`$ memduinod -h`<br>
-To see all the available options.
+If you want to customize these options you will have to open up /etc/memduino/.argconfig and appends any arguments to<br>
+`ARGS=`. <br>
+For these new arguments to take effect run:<br>
+`systemctl restart memduinod`.<br>
+Too see a list of all the arguments run:<br>
+`memduinod -h`
+
 ### Uninstallation:
 Run `sudo make uninstall-daemon` in the build directory.
 
