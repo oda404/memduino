@@ -1,0 +1,3 @@
+[submodule "argx"]
+	path = vendor/argx
+	url = https://github.com/oda404/argx
