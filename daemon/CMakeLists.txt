@@ -5,7 +5,10 @@ project(memduinod)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -fstack-protector-all")
+set(CMAKE_C_FLAGS 
+    "-O2 -Wall -Wextra -fstack-protector-strong \
+    -Werror-implicit-function-declaration"
+)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/argx argx)
 
@@ -33,7 +36,6 @@ add_executable(${PROJECT_NAME}
 
 set(link_libs "argx")
 
-message(${CMAKE_CURRENT_SOURCE_DIR})
 if(UNIX)
     set(link_libs ${link_libs} "m")
     add_custom_target(uninstall-daemon COMMAND 
