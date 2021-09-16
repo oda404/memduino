@@ -7,6 +7,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -fstack-protector-all")
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/argx argx)
+
 add_executable(${PROJECT_NAME}
     main.c
     memDuino.c
@@ -14,11 +16,9 @@ add_executable(${PROJECT_NAME}
     serial.c
     serial.h
     exitcodes.h
-    args.h
-    args.c
 )
 
-set(link_libs "")
+set(link_libs "argx")
 
 if(UNIX)
     set(link_libs ${link_libs} "m")

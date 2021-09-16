@@ -4,13 +4,16 @@
 #ifndef MEMDUINO_H
 #define MEMDUINO_H
 
-#define UI unsigned int
+typedef struct
+S_MemduinoConfig
+{
+    unsigned int update_interval_ms;
+    unsigned int serial_init_timeout_ms;
+    char *serial_port;
+} MemduinoConfig;
 
 int start_memduino(
-    UI update_interval_ms,
-    UI init_timeout_ms,
-    UI init_try_sleep_ms,
-    char *serial_port
+    const MemduinoConfig *config
 );
 
 #endif // MEMDUINO_H

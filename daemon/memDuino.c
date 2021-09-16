@@ -19,20 +19,20 @@
 
 typedef struct
 {
-    UI total;
-    UI buffers;
-    UI cached;
-    UI free;
-    UI shared;
-    UI s_reclaimable;
+    unsigned int total;
+    unsigned int buffers;
+    unsigned int cached;
+    unsigned int free;
+    unsigned int shared;
+    unsigned int s_reclaimable;
     /* Last used mem value that was sent to the arduino */
-    UI used;
+    unsigned int used;
 } MemInfo;
 
-static UI 
+static unsigned int 
 parse_uint_from_meminfo_line(const char *str)
 {
-	UI integer = 0;
+	unsigned int integer = 0;
 	size_t i = 0;
 	for(; i < strlen(str); ++i)
 	{
@@ -50,7 +50,7 @@ static int str_starts_with(
 	const char *subStr
 )
 {
-	const UI sub_str_len = strlen(subStr);
+	const unsigned int sub_str_len = strlen(subStr);
 
 	if(sub_str_len > strlen(str))
 	{
@@ -79,7 +79,7 @@ static void set_used_mem_mb(MemInfo *out_memInfo)
 
 static void create_packet(
 	char *out_packet, 
-	UI used_mem, 
+	unsigned int used_mem, 
 	size_t used_mem_length
 )
 {
@@ -114,26 +114,25 @@ static void sleep_for_ms(time_t time)
 #endif //__linux__
 }
 
+#define INIT_TRY_SLEEP_MS 1000
+
 int start_memduino(
-	UI update_interval_ms,
-    UI init_timeout_ms,
-    UI init_try_sleep_ms,
-	char *serial_port
+	const MemduinoConfig *config
 )
 {
-	UI init_elapsed_time = 0;
+	unsigned int init_elapsed_time = 0;
 	int device_fd;
 
-	while(try_serial_init(serial_port, &device_fd) != SERIAL_INIT_OK)
+	while(try_serial_init(config->serial_port, &device_fd) != SERIAL_INIT_OK)
 	{
-		if(init_elapsed_time >= init_timeout_ms)
+		if(init_elapsed_time >= config->serial_init_timeout_ms)
 		{
 			printf("Timed out trying to init the serial port\n");
 			return SERIAL_TIMEOUT;
 		}
 		
-		sleep_for_ms(init_try_sleep_ms);
-		init_elapsed_time += init_try_sleep_ms;
+		sleep_for_ms(INIT_TRY_SLEEP_MS);
+		init_elapsed_time += INIT_TRY_SLEEP_MS;
 	}
 
 	size_t used_mem_length;
@@ -208,7 +207,7 @@ int start_memduino(
 		write_to_serial(&device_fd, packet);
 
 		free(packet);
-		sleep_for_ms(update_interval_ms);
+		sleep_for_ms(config->update_interval_ms);
 	}
 
 #elif defined(_WIN32)
