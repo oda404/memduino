@@ -9,13 +9,24 @@ set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -fstack-protector-all")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/argx argx)
 
+set(INCLUDE_DIR include/memduinod)
+set(SRC_DIR src)
+
+set(SRC
+    ${SRC_DIR}/main.c
+    ${SRC_DIR}/memduinod.c
+    ${SRC_DIR}/serial.c
+)
+
+set(HEADERS
+    ${INCLUDE_DIR}/exitcodes.h
+    ${INCLUDE_DIR}/memduinod.h
+    ${INCLUDE_DIR}/serial.h
+)
+
 add_executable(${PROJECT_NAME}
-    main.c
-    memDuino.c
-    memDuino.h
-    serial.c
-    serial.h
-    exitcodes.h
+    ${SRC}
+    ${HEADERS}
 )
 
 set(link_libs "argx")
@@ -30,3 +41,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${link_libs}
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+    include/
+)

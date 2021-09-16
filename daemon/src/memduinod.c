@@ -1,9 +1,9 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#include"memDuino.h"
-#include"serial.h"
-#include"exitcodes.h"
+#include<memduinod/memduinod.h>
+#include<memduinod/serial.h>
+#include<memduinod/exitcodes.h>
 
 #include<time.h>
 #include<string.h>

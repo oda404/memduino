@@ -1,8 +1,9 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#include "memDuino.h"
-#include "exitcodes.h"
+#include <memduinod/memduinod.h>
+#include <memduinod/exitcodes.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
