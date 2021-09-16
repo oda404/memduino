@@ -29,26 +29,14 @@ int serial_init(const char *device)
 
 	struct termios tty;
 
-	if(tcgetattr(device_fd, &tty) != 0)
-	{
-		PRINTFF("Error from tcgetattr: %s\n", strerror(errno));
-		return -1;
-	}
+	cfmakeraw(&tty);
+	tty.c_cflag |= (CLOCAL | CREAD);
+	tty.c_iflag &= ~(IXOFF | IXANY);
 
-	if(cfsetospeed(&tty, (speed_t)B9600) != 0)
-	{
-		PRINTFF("Error from cfsetospeed: %s\n", strerror(errno));
-		return -1;
-	}
+	tty.c_cc[VMIN] = 0;
+	tty.c_cc[VTIME] = 0;
 
-	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
-	
-	tty.c_oflag = 0;
-
-	tty.c_cflag &= ~(PARENB | PARODD); 			// no parity
-	tty.c_cflag |= 0;
-	tty.c_cflag &= ~CSTOPB;
-	tty.c_cflag &= ~CRTSCTS;
+	cfsetospeed(&tty, (speed_t)B9600);
 
 	if(tcsetattr(device_fd, TCSANOW, &tty) != 0)
 	{
