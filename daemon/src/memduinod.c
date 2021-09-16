@@ -4,59 +4,13 @@
 #include<memduinod/memduinod.h>
 #include<memduinod/serial.h>
 #include<memduinod/exitcodes.h>
+#include<memduinod/meminfo.h>
 
 #include<time.h>
-#include<string.h>
 #include<stdio.h>
 #include<stdlib.h>
-#include<unistd.h>
 #include<math.h>
 #include<stdint.h>
-
-typedef struct
-{
-    unsigned int total;
-    unsigned int buffers;
-    unsigned int cached;
-    unsigned int free;
-    unsigned int shared;
-    unsigned int s_reclaimable;
-} MemInfo;
-
-/**
- * Parses and extracts memory information from /proc/meminfo,
- * one line at a time.
-*/
-static void meminfo_parse_info(const char *line, MemInfo *meminfo)
-{
-	//TODO: check the actual unit (kB mB) ??
-	if(strstr(line, "MemTotal:") == line)
-		meminfo->total = strtoul(strchr(line, ':') + 1, NULL, 10);
-	else if(strstr(line, "Buffers:") == line)
-		meminfo->buffers = strtoul(strchr(line, ':') + 1, NULL, 10);
-	else if(strstr(line, "Cached:") == line)
-		meminfo->cached = strtoul(strchr(line, ':') + 1, NULL, 10);
-	else if(strstr(line, "MemFree:") == line)
-		meminfo->free = strtoul(strchr(line, ':') + 1, NULL, 10);
-	else if(strstr(line, "Shmem:") == line)
-		meminfo->shared = strtoul(strchr(line, ':') + 1, NULL, 10);
-	else if(strstr(line, "SReclaimable:") == line)
-		meminfo->s_reclaimable = strtoul(strchr(line, ':') + 1, NULL, 10);
-}
-
-/**
- * @returns Used memory in mB.
-*/
-static uint32_t meminfo_calculate_used_mem_mb(const MemInfo *meminfo)
-{
-	return (
-		meminfo->total - meminfo->free - (
-			meminfo->buffers + (
-				meminfo->cached + meminfo->s_reclaimable - meminfo->shared
-			)
-		)
-	) / 1024;
-}
 
 static void packet_create(
 	char *packet, 
@@ -108,42 +62,20 @@ int memduinod_start(
 	{
 		if(init_elapsed_ms >= config->serial_init_timeout_ms)
 		{
-			printf("Timed out trying to init the serial port\n");
-			return SERIAL_TIMEOUT;
+			printf("[memduinod] Timed out trying to init the serial port\n");
+			return EXIT_SERIAL_ERR;
 		}
 		
 		sleep_ms(INIT_TRY_SLEEP_MS);
 		init_elapsed_ms += INIT_TRY_SLEEP_MS;
 	}
 
-#define BUFF_LENGTH 64
-	char line[BUFF_LENGTH + 1];
-
-	MemInfo meminfo = {
-		.total = 0,
-		.buffers = 0,
-		.cached = 0,
-		.free = 0,
-		.shared = 0,
-		.s_reclaimable = 0
-	};
-
-	FILE *file = NULL;
 	while(1)
 	{
-		if(!(file = fopen("/proc/meminfo", "r")))
-		{
-			printf("Fatal error: couldn't open /proc/meminfo\n");
-			serial_close(device_fd);
-			return MEMINFO_OPEN_ERR;
-		}
+		int32_t usedmem = meminfo_get_used_mem(MEMINFO_MB);
+		if(usedmem < 0)
+			return EXIT_MEMINFO_ERR;
 
-		while(fgets(line, BUFF_LENGTH, file))
-			meminfo_parse_info(line, &meminfo);
-
-		fclose(file);
-
-		uint32_t usedmem = meminfo_calculate_used_mem_mb(&meminfo);
 		size_t usedmem_digs = (int)log10(usedmem) + 1;
 		char *packet = malloc(sizeof(char) * (usedmem_digs + 3));
 

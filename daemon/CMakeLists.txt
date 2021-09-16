@@ -16,12 +16,14 @@ set(SRC
     ${SRC_DIR}/main.c
     ${SRC_DIR}/memduinod.c
     ${SRC_DIR}/serial.c
+    ${SRC_DIR}/meminfo.c
 )
 
 set(HEADERS
     ${INCLUDE_DIR}/exitcodes.h
     ${INCLUDE_DIR}/memduinod.h
     ${INCLUDE_DIR}/serial.h
+    ${INCLUDE_DIR}/meminfo.h
 )
 
 add_executable(${PROJECT_NAME}
