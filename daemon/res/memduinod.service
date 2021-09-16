@@ -3,8 +3,8 @@ Description=memduino daemon systemd service
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/memduino/.argconfig
-ExecStart=/usr/bin/memduinod $ARGS
+EnvironmentFile=/etc/memduino/args
+ExecStart=/usr/bin/memduinod $MEMDUINO_ARGS
 
 [Install]
 WantedBy=multi-user.target

@@ -33,10 +33,15 @@ add_executable(${PROJECT_NAME}
 
 set(link_libs "argx")
 
+message(${CMAKE_CURRENT_SOURCE_DIR})
 if(UNIX)
     set(link_libs ${link_libs} "m")
-    add_custom_target(uninstall-daemon COMMAND ${CMAKE_SOURCE_DIR}/linux/uninstall-daemon.sh)
-    add_custom_target(install-daemon COMMAND ${CMAKE_SOURCE_DIR}/linux/install-daemon.sh)
+    add_custom_target(uninstall-daemon COMMAND 
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/uninstall-daemon.sh
+    )
+    add_custom_target(install-daemon COMMAND 
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/install-daemon.sh
+    )
 endif(UNIX)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
