@@ -7,23 +7,13 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#if defined(__linux__)
-
 #include<unistd.h>
 #include<termios.h>
 #include<fcntl.h> 
 #include<errno.h>
 
-#elif defined(_WIN32)
-
-#include<windows.h>
-
-#endif // __linux__
-
 int try_serial_init(const char *device_name, int *out_device_fd)
 {
-#if defined(__linux__)
-
 	*out_device_fd = open(device_name, O_WRONLY | O_NOCTTY | O_SYNC);
 
 	if(*out_device_fd < 0)
@@ -61,84 +51,24 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 		return errno;
 	}
 
-#elif defined(_WIN32)
-
-	BOOL Status;
-
-	memduino->info.commHandle = CreateFileA(memduino->info.device_name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (memduino->info.commHandle == INVALID_HANDLE_VALUE)
-	{
-		printf("Error in opening serial port %s\n", memduino->info.device_name);
-	}
-
-	DCB dcb;
-	dcb.DCBlength = sizeof(dcb);
-
-	Status = GetCommState(memduino->info.commHandle, &dcb);
-	if (!Status)
-	{
-		printf("Error in GetCommState\n");
-	}
-
-	/* Defaut config for arduinos */
-	dcb.BaudRate = CBR_9600;	// 9600 Baud speed
-	dcb.ByteSize = 8;			// 8 bits per byte
-	dcb.StopBits = ONESTOPBIT;	// 1 stop bit
-	dcb.Parity   = PARITY_NONE;	// no parity
-
-	Status = SetCommState(memduino->info.commHandle, &dcb);
-
-	if (!Status)
-	{
-		printf("Error in setting DCB Struct\n");
-	}
-
-	COMMTIMEOUTS timeouts; // port timeouts
-	timeouts.WriteTotalTimeoutConstant = 50;
-	timeouts.WriteTotalTimeoutMultiplier = 10;
-
-	Status = SetCommTimeouts(memduino->info.commHandle, &timeouts);
-
-	if (!Status)
-	{
-		printf("Error in setting port timeouts\n"); 
-	}
-
-#endif //__linux__
-
 	return SERIAL_INIT_OK;
 }
 
 void write_to_serial(const int *device_fd, const char *data)
 {
-#if defined(__linux__)
 	size_t n = strlen(data);
 	size_t written = write(*device_fd, data, n);
 	if(written < n)
 	{
 		printf("Written %ld out of %ld\n", written, n);
 	}
-
-#elif defined(_WIN32)
-
-	WriteFile(memduino->info.commHandle, data, strlen(data), NULL, NULL);
-
-#endif //__linux__
 }
 
 void serial_close(const int *device_fd)
 {
-#if defined(__linux__)
-
 	int status = close(*device_fd);
 	if(status == -1)
 	{
 		printf("Error when closing %d: %s", *device_fd, strerror(errno));
 	}
-
-#elif defined(_WIN32)
-
-	CloseHandle(memduino->info.commHandle);
-
-#endif //__linux__
 }

@@ -3,19 +3,15 @@
 
 #include"memDuino.h"
 #include"serial.h"
-#include<math.h>
 #include"exitcodes.h"
-
-#define MAGIC 0x1BADF14D
-
-#if defined(__linux__)
 
 #include<time.h>
 #include<string.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
-#define BUFF_LENGTH 64
+#include<math.h>
+#include<stdint.h>
 
 typedef struct
 {
@@ -25,56 +21,65 @@ typedef struct
     unsigned int free;
     unsigned int shared;
     unsigned int s_reclaimable;
-    /* Last used mem value that was sent to the arduino */
-    unsigned int used;
 } MemInfo;
 
-static unsigned int 
-parse_uint_from_meminfo_line(const char *str)
+/**
+ * Parses and extracts memory information from /proc/meminfo,
+ * one line at a time.
+*/
+static void meminfo_parse_info(const char *line, MemInfo *meminfo)
 {
-	unsigned int integer = 0;
-	size_t i = 0;
-	for(; i < strlen(str); ++i)
-	{
-		if((int)str[i] >= 48 && (int)str[i] <= 57)
-		{
-			integer = integer * 10 + (int)str[i] - 48;
-		}
-	}
-
-	return integer;
+	//TODO: check the actual unit (kB mB) ??
+	if(strstr(line, "MemTotal:") == line)
+		meminfo->total = strtoul(strchr(line, ':') + 1, NULL, 10);
+	else if(strstr(line, "Buffers:") == line)
+		meminfo->buffers = strtoul(strchr(line, ':') + 1, NULL, 10);
+	else if(strstr(line, "Cached:") == line)
+		meminfo->cached = strtoul(strchr(line, ':') + 1, NULL, 10);
+	else if(strstr(line, "MemFree:") == line)
+		meminfo->free = strtoul(strchr(line, ':') + 1, NULL, 10);
+	else if(strstr(line, "Shmem:") == line)
+		meminfo->shared = strtoul(strchr(line, ':') + 1, NULL, 10);
+	else if(strstr(line, "SReclaimable:") == line)
+		meminfo->s_reclaimable = strtoul(strchr(line, ':') + 1, NULL, 10);
 }
 
-static void set_used_mem_mb(MemInfo *out_memInfo)
+/**
+ * @returns Used memory in mB.
+*/
+static uint32_t meminfo_calculate_used_mem_mb(const MemInfo *meminfo)
 {
-	// taken from https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop/41251290#41251290
-	out_memInfo->used = (out_memInfo->total - out_memInfo->free-(out_memInfo->buffers + (out_memInfo->cached + out_memInfo->s_reclaimable - out_memInfo->shared))) / 1024;
+	return (
+		meminfo->total - meminfo->free - (
+			meminfo->buffers + (
+				meminfo->cached + meminfo->s_reclaimable - meminfo->shared
+			)
+		)
+	) / 1024;
 }
 
-#endif // __linux__
-
-static void create_packet(
-	char *out_packet, 
-	unsigned int used_mem, 
-	size_t used_mem_length
+static void packet_create(
+	char *packet, 
+	unsigned int usedmem, 
+	size_t usedmem_digs
 )
 {
 	size_t i = 0;
 	
-	out_packet[i++] = 'S';
+	packet[i++] = 'S';
 
-	while(i <= used_mem_length)
+	while(i <= usedmem_digs)
 	{
-		out_packet[i] = (char)(used_mem / (int)pow(10, used_mem_length - i) + 48);
-		used_mem %= (int)pow(10, used_mem_length - i++);
+		packet[i] = (char)(usedmem / (int)pow(10, usedmem_digs - i) + '0');
+		usedmem %= (int)pow(10, usedmem_digs - i++);
 	}
 
-	out_packet[i++] = 'E';
-	out_packet[i] = '\0';
+	packet[i++] = 'E';
+	packet[i] = '\0';
 	/* start and end the packet with S and E respectively */
 }
 
-static void sleep_for_ms(time_t time)
+static void sleep_ms(time_t time)
 {
 #if defined(__linux__)
 #if _POSIX_C_SOURCE > 199309L
@@ -84,10 +89,10 @@ static void sleep_for_ms(time_t time)
 	nanosleep(&ts, NULL);
 #else
 	usleep(time * 1000);
-#endif // _POSIX_C_SOURCE
-#elif defined(_WIN32)
-	Sleep(time);
-#endif //__linux__
+#endif // _POSIX_C_SOURCE > 199309L
+#else
+#	error "Unknown platform"
+#endif // defined(__linux__)
 }
 
 #define INIT_TRY_SLEEP_MS 1000
@@ -96,38 +101,34 @@ int memduinod_start(
 	const MemduinodConfig *config
 )
 {
-	unsigned int init_elapsed_time = 0;
+	uint32_t init_elapsed_ms = 0;
 	int device_fd;
 
 	while(try_serial_init(config->serial_port, &device_fd) != SERIAL_INIT_OK)
 	{
-		if(init_elapsed_time >= config->serial_init_timeout_ms)
+		if(init_elapsed_ms >= config->serial_init_timeout_ms)
 		{
 			printf("Timed out trying to init the serial port\n");
 			return SERIAL_TIMEOUT;
 		}
 		
-		sleep_for_ms(INIT_TRY_SLEEP_MS);
-		init_elapsed_time += INIT_TRY_SLEEP_MS;
+		sleep_ms(INIT_TRY_SLEEP_MS);
+		init_elapsed_ms += INIT_TRY_SLEEP_MS;
 	}
 
-	size_t used_mem_length;
-	char *packet;
-
-#if defined(__linux__)
-
-	FILE *file;
+#define BUFF_LENGTH 64
 	char line[BUFF_LENGTH + 1];
-	MemInfo mem_info = {
+
+	MemInfo meminfo = {
 		.total = 0,
 		.buffers = 0,
 		.cached = 0,
 		.free = 0,
 		.shared = 0,
-		.s_reclaimable = 0,
-		.used = 0
+		.s_reclaimable = 0
 	};
 
+	FILE *file = NULL;
 	while(1)
 	{
 		if(!(file = fopen("/proc/meminfo", "r")))
@@ -138,81 +139,21 @@ int memduinod_start(
 		}
 
 		while(fgets(line, BUFF_LENGTH, file))
-		{
-			if(strstr(line, "MemTotal:") == line)
-			{
-				mem_info.total = 
-				parse_uint_from_meminfo_line(line);
-			}
-			else if(strstr(line, "Buffers:") == line)
-			{
-				mem_info.buffers = 
-				parse_uint_from_meminfo_line(line);
-			}
-			else if(strstr(line, "Cached:") == line)
-			{
-				mem_info.cached = 
-				parse_uint_from_meminfo_line(line);
-			}
-			else if(strstr(line, "MemFree:") == line)
-			{
-				mem_info.free = 
-				parse_uint_from_meminfo_line(line);
-			}
-			else if(strstr(line, "Shmem:") == line)
-			{
-				mem_info.shared = 
-				parse_uint_from_meminfo_line(line);
-			}
-			else if(strstr(line, "SReclaimable:") == line)
-			{
-				mem_info.s_reclaimable = 
-				parse_uint_from_meminfo_line(line);
-			}
-		}
+			meminfo_parse_info(line, &meminfo);
 
 		fclose(file);
 
-		set_used_mem_mb(&mem_info);
+		uint32_t usedmem = meminfo_calculate_used_mem_mb(&meminfo);
+		size_t usedmem_digs = (int)log10(usedmem) + 1;
+		char *packet = malloc(sizeof(char) * (usedmem_digs + 3));
 
-		used_mem_length = (int)log10(mem_info.used) + 1;
-		packet = malloc(sizeof(char) * (used_mem_length + 3));
-
-		create_packet(packet, mem_info.used, used_mem_length);
+		packet_create(packet, usedmem, usedmem_digs);
 
 		write_to_serial(&device_fd, packet);
 
 		free(packet);
-		sleep_for_ms(config->update_interval_ms);
+		sleep_ms(config->update_interval_ms);
 	}
-
-#elif defined(_WIN32)
-
-	/* Hide the console window */
-	HWND hWnd = GetConsoleWindow();
-	ShowWindow(hWnd, SW_HIDE);
-
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof(statex);
-
-	while (1)
-	{
-		GlobalMemoryStatusEx(&statex);
-
-		mem_info.used_mem = (statex.ullTotalPhys - statex.ullAvailPhys) / (1024 * 1024);
-
-		size_t used_mem_dig_cnt = (int)log10(mem_info.used_mem) + 1;
-		char* packet = malloc(used_mem_dig_cnt + 2);
-
-		create_packet(packet, mem_info.used_mem, used_mem_dig_cnt);
-
-		write_to_serial(memduino, packet);
-
-		free(packet);
-		sleep_for_ms(memduino->info.update_interval_ms);
-	}
-
-#endif // __linux__
 	serial_close(&device_fd);
 
 	return EXIT_OK;
