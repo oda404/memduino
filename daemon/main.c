@@ -128,13 +128,13 @@ int main(int argc, char **argv)
 
 	argx_destroy(&argx);
 
-	MemduinoConfig config = {
+	MemduinodConfig config = {
 		.serial_port = serial_port,
 		.serial_init_timeout_ms = serial_init_timeout_ms,
 		.update_interval_ms = update_interval_ms
 	};
 
-	int status = start_memduino(&config);
+	int status = memduinod_start(&config);
 
 	free(serial_port);
 

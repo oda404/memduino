@@ -92,8 +92,8 @@ static void sleep_for_ms(time_t time)
 
 #define INIT_TRY_SLEEP_MS 1000
 
-int start_memduino(
-	const MemduinoConfig *config
+int memduinod_start(
+	const MemduinodConfig *config
 )
 {
 	unsigned int init_elapsed_time = 0;

@@ -5,15 +5,15 @@
 #define MEMDUINO_H
 
 typedef struct
-S_MemduinoConfig
+S_MemduinodConfig
 {
     unsigned int update_interval_ms;
     unsigned int serial_init_timeout_ms;
     char *serial_port;
-} MemduinoConfig;
+} MemduinodConfig;
 
-int start_memduino(
-    const MemduinoConfig *config
+int memduinod_start(
+    const MemduinodConfig *config
 );
 
 #endif // MEMDUINO_H
