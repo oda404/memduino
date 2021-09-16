@@ -104,7 +104,7 @@ int memduinod_start(
 	uint32_t init_elapsed_ms = 0;
 	int device_fd;
 
-	while(try_serial_init(config->serial_port, &device_fd) != SERIAL_INIT_OK)
+	while((device_fd = serial_init(config->serial_port)) < 0)
 	{
 		if(init_elapsed_ms >= config->serial_init_timeout_ms)
 		{
@@ -134,7 +134,7 @@ int memduinod_start(
 		if(!(file = fopen("/proc/meminfo", "r")))
 		{
 			printf("Fatal error: couldn't open /proc/meminfo\n");
-			serial_close(&device_fd);
+			serial_close(device_fd);
 			return MEMINFO_OPEN_ERR;
 		}
 
@@ -149,12 +149,12 @@ int memduinod_start(
 
 		packet_create(packet, usedmem, usedmem_digs);
 
-		write_to_serial(&device_fd, packet);
+		serial_write(device_fd, packet);
 
 		free(packet);
 		sleep_ms(config->update_interval_ms);
 	}
-	serial_close(&device_fd);
+	serial_close(device_fd);
 
 	return EXIT_OK;
 }

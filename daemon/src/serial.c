@@ -5,35 +5,40 @@
 
 #include<string.h>
 #include<stdio.h>
-#include<stdlib.h>
-
 #include<unistd.h>
 #include<termios.h>
 #include<fcntl.h> 
 #include<errno.h>
 
-int try_serial_init(const char *device_name, int *out_device_fd)
-{
-	*out_device_fd = open(device_name, O_WRONLY | O_NOCTTY | O_SYNC);
+#define PRINTFF(fmt, ...) printf("[serial] " fmt, ##__VA_ARGS__)
 
-	if(*out_device_fd < 0)
+/**
+ * TODO: Make serial_init take in more arguments like the
+ * baud rate, r/w mode ??
+*/
+
+int serial_init(const char *device)
+{
+	int device_fd = open(device, O_WRONLY | O_NOCTTY | O_SYNC);
+	
+	if(device_fd < 0)
 	{
-		printf("Error oppening %s: %s\n", device_name, strerror(errno));
-		return errno;
+		PRINTFF("Error oppening %s: %s\n", device, strerror(errno));
+		return -1;
 	}
 
 	struct termios tty;
 
-	if(tcgetattr(*out_device_fd, &tty) != 0)
+	if(tcgetattr(device_fd, &tty) != 0)
 	{
-		printf("Error from tcgetattr: %s\n", strerror(errno));
-		return errno;
+		PRINTFF("Error from tcgetattr: %s\n", strerror(errno));
+		return -1;
 	}
 
 	if(cfsetospeed(&tty, (speed_t)B9600) != 0)
 	{
-		printf("Error from cfsetospeed: %s\n", strerror(errno));
-		return errno;
+		PRINTFF("Error from cfsetospeed: %s\n", strerror(errno));
+		return -1;
 	}
 
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits per char
@@ -45,30 +50,27 @@ int try_serial_init(const char *device_name, int *out_device_fd)
 	tty.c_cflag &= ~CSTOPB;
 	tty.c_cflag &= ~CRTSCTS;
 
-	if(tcsetattr(*out_device_fd, TCSANOW, &tty) != 0)
+	if(tcsetattr(device_fd, TCSANOW, &tty) != 0)
 	{
-		printf("Error from tcsetattr: %s\n", strerror(errno));
-		return errno;
+		PRINTFF("Error from tcsetattr: %s\n", strerror(errno));
+		return -1;
 	}
 
-	return SERIAL_INIT_OK;
+	return device_fd;
 }
 
-void write_to_serial(const int *device_fd, const char *data)
+size_t serial_write(int device_fd, const char *data)
 {
-	size_t n = strlen(data);
-	size_t written = write(*device_fd, data, n);
-	if(written < n)
-	{
-		printf("Written %ld out of %ld\n", written, n);
-	}
+	return serial_nwrite(device_fd, data, strlen(data));
 }
 
-void serial_close(const int *device_fd)
+size_t serial_nwrite(int device_fd, const char *data, size_t n)
 {
-	int status = close(*device_fd);
-	if(status == -1)
-	{
-		printf("Error when closing %d: %s", *device_fd, strerror(errno));
-	}
+	return write(device_fd, data, n);
+}
+
+void serial_close(const int device_fd)
+{
+	if(close(device_fd) == -1)
+		PRINTFF("Error when closing file descriptor %d: %s\n", device_fd, strerror(errno));
 }
