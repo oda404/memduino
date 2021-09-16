@@ -10,30 +10,30 @@
 #include <stdbool.h>
 #include <argx/argx.h>
 
+#define STRINGIFY(x) #x
+#define TOSTR(x) STRINGIFY(x)
+
 #define HELP_ARG "help"
 #define HELP_ARG_SHORT "-h"
 #define HELP_ARG_LONG "--help"
+#define HELP_ARG_DESC "Show this message and exit."
 
 #define UPDATE_INTERVAL_ARG "update_interval"
 #define UPDATE_INTERVAL_ARG_SHORT "-u"
-#define UPDATE_INTERVAL_ARG_LONG "--update-interval"
+#define UPDATE_INTERVAL_ARG_LONG "--update-interval <val>"
+#define DEFAULT_UPDATE_INTERVAL_MS 1000
+#define UPDATE_INTERVAL_ARG_DESC "Interval at which data packets are sent to the Arduino in milliseconds. (default: " TOSTR(DEFAULT_UPDATE_INTERVAL_MS) ")"
 
 #define INIT_TIMEOUT_ARG "init_timeout"
 #define INIT_TIMEOUT_ARG_SHORT "-i"
-#define INIT_TIMEOUT_ARG_LONG "--init-timeout"
+#define INIT_TIMEOUT_ARG_LONG "--init-timeout <val>"
+#define DEFAULT_INIT_TIMEOUT_MS 10000
+#define INIT_TIMEOUT_ARG_DESC "Timeout for connecting to the serial port in milliseconds. (default: " TOSTR(DEFAULT_INIT_TIMEOUT_MS) ")"
 
 #define SERIAL_PORT_ARG "serial_port"
 #define SERIAL_PORT_ARG_SHORT "-s"
-#define SERIAL_PORT_ARG_LONG "--serial-port"
-
-#define DUMP_DEFAULTS_ARG "dump_defaults"
-#define DUMP_DEFAULTS_ARG_SHORT "-d"
-#define DUMP_DEFAULTS_ARG_LONG "--dump-defaults"
-
-#define DEFAULT_UPDATE_INTERVAL_MS 1000
-#define DEFAULT_INIT_TIMEOUT_MS 10000
-#define DEFAULT_INIT_TRY_SLEEP_MS 1500
-#define DEFAULT_SERIAL_PORT "/dev/ttyUSB0"
+#define SERIAL_PORT_ARG_LONG "--serial-port <port>"
+#define SERIAL_PORT_ARG_DESC "Serial port to which the Arduino is connected."
 
 int main(int argc, char **argv)
 {
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 		HELP_ARG,
 		HELP_ARG_SHORT,
 		HELP_ARG_LONG,
-		"Show this message and exit.",
+		HELP_ARG_DESC,
 		true,
 		&argx
 	);
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 		UPDATE_INTERVAL_ARG,
 		UPDATE_INTERVAL_ARG_SHORT,
 		UPDATE_INTERVAL_ARG_LONG,
-		"Interval at which data packets are sent to the Arduino in milliseconds.",
+		UPDATE_INTERVAL_ARG_DESC,
 		false,
 		&argx
 	);
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 		INIT_TIMEOUT_ARG,
 		INIT_TIMEOUT_ARG_SHORT,
 		INIT_TIMEOUT_ARG_LONG,
-		"Timeout for connecting to the serial port in milliseconds.",
+		INIT_TIMEOUT_ARG_DESC,
 		false,
 		&argx
 	);
@@ -68,16 +68,8 @@ int main(int argc, char **argv)
 		SERIAL_PORT_ARG,
 		SERIAL_PORT_ARG_SHORT,
 		SERIAL_PORT_ARG_LONG,
-		"Serial port to which the Arduino is connected.",
+		SERIAL_PORT_ARG_DESC,
 		false,
-		&argx
-	);
-	argx_arg_add(
-		DUMP_DEFAULTS_ARG,
-		DUMP_DEFAULTS_ARG_SHORT,
-		DUMP_DEFAULTS_ARG_LONG,
-		"For every available argument, dump it's default value to stdout.",
-		true,
 		&argx
 	);
 	argx_help_msg_gen("memduinod [options]", "Starts the memduino daemon.", &argx);
@@ -90,29 +82,10 @@ int main(int argc, char **argv)
 		return EXIT_OK;
 	}
 
-	if (argx_arg_present(DUMP_DEFAULTS_ARG, &argx))
-	{
-		printf("Argument defaults:\n");
-		printf("  %s,%s: %dms\n", UPDATE_INTERVAL_ARG_SHORT, UPDATE_INTERVAL_ARG_LONG, DEFAULT_UPDATE_INTERVAL_MS);
-		printf("  %s,%s: %d\n", INIT_TIMEOUT_ARG_SHORT, INIT_TIMEOUT_ARG_LONG, DEFAULT_INIT_TIMEOUT_MS);
-		printf("  %s,%s: %s\n", SERIAL_PORT_ARG_SHORT, SERIAL_PORT_ARG_LONG, DEFAULT_SERIAL_PORT);
-		return EXIT_OK;
-	}
-
 	unsigned int
 		update_interval_ms = 0,
 		serial_init_timeout_ms = 0;
 	char *serial_port = NULL;
-
-	if (argx_arg_present(UPDATE_INTERVAL_ARG, &argx))
-		argx_arg_val_get_uint(UPDATE_INTERVAL_ARG, &update_interval_ms, &argx);
-	else
-		update_interval_ms = DEFAULT_UPDATE_INTERVAL_MS;
-
-	if (argx_arg_present(INIT_TIMEOUT_ARG, &argx))
-		argx_arg_val_get_uint(INIT_TIMEOUT_ARG, &serial_init_timeout_ms, &argx);
-	else
-		serial_init_timeout_ms = DEFAULT_INIT_TIMEOUT_MS;
 
 	if (argx_arg_present(SERIAL_PORT_ARG, &argx))
 	{
@@ -123,9 +96,20 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		serial_port = malloc(strlen(DEFAULT_SERIAL_PORT) + 1);
-		strcpy(serial_port, DEFAULT_SERIAL_PORT);
+		printf("%s\n", argx_help_msg_get(&argx));
+		printf("No serial port was specified with %s,%s!\n", SERIAL_PORT_ARG_SHORT, SERIAL_PORT_ARG_LONG);
+		return EXIT_ARG_MISSING;
 	}
+
+	if (argx_arg_present(UPDATE_INTERVAL_ARG, &argx))
+		argx_arg_val_get_uint(UPDATE_INTERVAL_ARG, &update_interval_ms, &argx);
+	else
+		update_interval_ms = DEFAULT_UPDATE_INTERVAL_MS;
+
+	if (argx_arg_present(INIT_TIMEOUT_ARG, &argx))
+		argx_arg_val_get_uint(INIT_TIMEOUT_ARG, &serial_init_timeout_ms, &argx);
+	else
+		serial_init_timeout_ms = DEFAULT_INIT_TIMEOUT_MS;
 
 	argx_destroy(&argx);
 
