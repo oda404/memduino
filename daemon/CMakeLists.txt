@@ -12,8 +12,8 @@ set(CMAKE_C_FLAGS
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/argx argx)
 
-set(INCLUDE_DIR include/memduinod)
-set(SRC_DIR src)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/memduinod)
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(SRC
     ${SRC_DIR}/main.c
@@ -38,11 +38,11 @@ set(link_libs "argx")
 
 if(UNIX)
     set(link_libs ${link_libs} "m")
-    add_custom_target(uninstall-daemon COMMAND 
-        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/uninstall-daemon.sh
-    )
     add_custom_target(install-daemon COMMAND 
-        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/install-daemon.sh
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/install.sh
+    )
+    add_custom_target(uninstall-daemon COMMAND 
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/uninstall.sh
     )
 endif(UNIX)
 
