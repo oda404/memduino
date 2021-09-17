@@ -1,44 +1,52 @@
 # memduino
 Display your computer's RAM usage on a 7 segment 4 digit display connected to an Arduino.<br>
 
-## Setup
-- For now memduino needs to be compiled from source.
+## Installation
+For now memduino needs to be compiled from source.
 
-#### Firstly you will need to upload the sketch_memduino/sketch_memduino.ino to your Arduino.
+### Arduino:
+* Configure the first 12 macros in sketch_memduino/sketch_memduino.ino to fit your particular setup. 
+* Upload sketch_memduino/sketch_memduino.ino to your Arduino.
 
-## Linux:
+### Linux:
 ```console
 git clone https://github.com/oda404/memduino
 cd memduino
-mkdir build && cd build
-cmake ..
-make
-sudo make install-daemon
+cmake -B build .
+sudo make -C build
+sudo make -C build install-all
 ```
 
-This will install memduinod as a systemd service and will run with the default options:
-- Update interval: 1000ms
-- Init timeout: 10000ms
-- Init try sleep time: 1500ms (sleep time between serial init attempts)
-- Serial port: /dev/ttyUSB0
+### Any other platform:
+Feel free to port it.
 
-To customize these options open up /etc/memduino/.argconfig and append any arguments to<br>
-`ARGS=`. <br>
-For these new arguments to take effect run:<br>
-```console
-systemctl restart memduinod
-```
-To see a list of all the available arguments run:<br>
+## Post-installation
+
+### Options:
+To see a list of all the available options run:
 ```console
 memduinod -h
 ```
 
-### Uninstallation:
-Run `sudo make uninstall-daemon` in the build directory.
+### Running:
+You can either run `memduinod` in a terminal, passing it any options you want. Example:
+```console
+sudo memduinod --serial-port /dev/ttyUSB0 --update-interval 500
+```
+or you can run `memduinod` as a systemd service by first appending any options you want to the <b>*MEMDUINO_ARGS*</b> variable in `/etc/memduino/args`,
+and starting it with:
+```console
+sudo systemctl start memduinod
+```
+If you also want `memduinod` to start at boot run:
+```console
+sudo systemctl enable memduinod
+```
 
-## Windows:
-(broken)
-Compile the source however you like and set the meduino executable to run at startup.
-
-## Info
-- Only supports RAM values that range from 0 to 99999 (MB) assuming your display has a decimal point.
+## Uninstallation
+```console
+cd <repo-location>
+sudo make -C build uninstall-all
+``` 
+## License
+This code is licensed under the MIT license.
