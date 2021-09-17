@@ -20,19 +20,19 @@
 
 #define UPDATE_INTERVAL_ARG "update_interval"
 #define UPDATE_INTERVAL_ARG_SHORT "-u"
-#define UPDATE_INTERVAL_ARG_LONG "--update-interval <val>"
+#define UPDATE_INTERVAL_ARG_LONG "--update-interval"
 #define DEFAULT_UPDATE_INTERVAL_MS 1000
 #define UPDATE_INTERVAL_ARG_DESC "Interval at which data packets are sent to the Arduino in milliseconds. (default: " TOSTR(DEFAULT_UPDATE_INTERVAL_MS) ")"
 
 #define INIT_TIMEOUT_ARG "init_timeout"
 #define INIT_TIMEOUT_ARG_SHORT "-i"
-#define INIT_TIMEOUT_ARG_LONG "--init-timeout <val>"
+#define INIT_TIMEOUT_ARG_LONG "--init-timeout"
 #define DEFAULT_INIT_TIMEOUT_MS 10000
 #define INIT_TIMEOUT_ARG_DESC "Timeout for connecting to the serial port in milliseconds. (default: " TOSTR(DEFAULT_INIT_TIMEOUT_MS) ")"
 
 #define SERIAL_PORT_ARG "serial_port"
 #define SERIAL_PORT_ARG_SHORT "-s"
-#define SERIAL_PORT_ARG_LONG "--serial-port <port>"
+#define SERIAL_PORT_ARG_LONG "--serial-port"
 #define SERIAL_PORT_ARG_DESC "Serial port to which the Arduino is connected."
 
 int main(int argc, char **argv)
